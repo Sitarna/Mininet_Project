@@ -1,3 +1,7 @@
+#To run the mininet with this controller
+#Start this controller with "ryu-manager l2.py"
+#And start the mininet with " mn --topo=single,3 --controller=remote,ip=127.0.0.1 --switch=ovs,protocols=OpenFlow10 "
+
 from ryu.base import app_manager
 from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER

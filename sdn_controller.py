@@ -5,31 +5,35 @@ from ryu.controller.handler import MAIN_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_0
 
-class sdn_controller(app_manager.RyuApp):
+class LearningSwitch(app_manager.RyuApp):
         OFP_VERSION = [ofproto_v1_0.OFP_VERSION]
 
         def __init__(self, *args, **kwargs):
-                super(L2Switch, self).__init__(*args, **kwargs)
+                super(LearingSwitch, self).__init__(*args, **kwargs)
+		self.mac_to_port = {}
 
         @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
+	def switch_feature_handler(self, ev):
+	#Default rule, all unknown packages are sent to the controller
+		datapath = ev.msg.datapath
+		ofproto = datapath.ofproto
+		parser = datapath.ofproto_parser
+
+		match = parser.OFPMatch()
+		#THis catches all packages: Later its possible to use eg
+		#paerser.OFPMatch(in_port=1, eth_type=0x0800, ipv4_dst="10.0.0.2")
+
+		actions = [parser.OFPAcionOutput(ofproto.OFPP_CONTROLLER,
+						ofproto.OFPCML_NO_BUFFER)]
+		inst = [parser.OFPInstructionAnctions(ofproto.OFPIT_APPLY_ACTIONS,
+								actions)]
+		mod = parser.OFPFlowMod(datapath=datapath, priority=0,
+					match=match, instructions=inst)
+
+		datapath.send_msg(mod)
+
         def packet_in_handler(self, ev):
                 msg = ev.msg
-                dp = msg.datapath
-                ofp = dp.ofproto
-                ofp_parser = dp.ofproto_parser
-
-                actions = [ofp_parser.OFPActionOutput(ofp.OFPP_FLOOD)]
-
-                data = None
-                if msg.buffer_id == ofp.OFP_NO_BUFFER:
-                        data = msg.data
-
-                out = ofp_parser.OFPPacketOut(
-                        datapath = dp,
-                        buffer_id = msg.buffer_id,
-                        in_port = msg.in_port,
-                        actions = actions, data = data)
-
-                self.logger.info("Packet in: switch=%s in_port=%s", dp.id, msg.in_port)
-
-                dp.send_msg(out)
+                datapath = msg.datapath
+                dpid = datapath.id
+		

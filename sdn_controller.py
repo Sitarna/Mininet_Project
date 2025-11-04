@@ -6,7 +6,8 @@ from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
-from ryu.lib.packet import packet, ethernet
+from ryu.lib.packet import packet, ethernet, ether_types
+from ryu.lib.mac import haddr_to_bin
 
 class LearningSwitch(app_manager.RyuApp):
         OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
@@ -47,7 +48,8 @@ class LearningSwitch(app_manager.RyuApp):
             
             pkt = packet.Packet(msg.data)
             eth = pkt.get_protocol(ethernet.ethernet)
-                
+            
+            #Ignore LLDP packages
             if eth.ethertype == 0x88cc:
                 return
                 
@@ -58,7 +60,7 @@ class LearningSwitch(app_manager.RyuApp):
             self.mac_to_port.setdefault(dpid, {})
             self.mac_to_port[dpid][src] = in_port
                 
-            self.logger.info("Switch %s learned %s is at port %s", dpid, src, in_port)
+            
                 
                 
             if dst in self.mac_to_port[dpid]:
@@ -68,18 +70,51 @@ class LearningSwitch(app_manager.RyuApp):
                 
             actions = [parser.OFPActionOutput(out_port)]
                 
+            self.logger.info("Switch %s learned %s is at port %s", dpid, src, in_port)
+            
             if out_port != ofproto.OFPP_FLOOD:
-                match = parser.OFPMatch(in_port=in_port, eth_dst=dst, eth_src=src)
+                match = parser.OFPMatch(eth_dst=dst)
                 inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
                 
-                mod = parser.OFPFlowMod(datapath=datapath, priority=1, match=match, instructions=inst)
+                mod = parser.OFPFlowMod(datapath=datapath,
+                                        priority=10,
+                                        match=match,
+                                        instructions=inst,
+                                        buffer_id=msg.buffer_id)
                 
                 datapath.send_msg(mod)
             
-            out = parser.OFPPacketOut(datapath=datapath,
-                                      buffer_id=msg.buffer_id,
-                                      in_port=in_port,
-                                      actions=actions,
-                                      data = None if msg.buffer_id != ofproto.OFP_NO_BUFFER else msg.data)
+                if msg.buffer_id == ofproto.OFP_NO_BUFFER:
+                    out = parser.OFPPacketOut(datapath=datapath,
+                                              buffer_id=msg.buffer_id,
+                                              in_port=in_port,
+                                              instructions=inst,
+                                              data = msg.data)
             
-            datapath.send_msg(out)
+                    datapath.send_msg(out)
+                else:
+                    out = parser.OFPPacketOut(datapath=datapath,
+                                  buffer_id=ofproto.OFP_NO_BUFFER,
+                                  in_port=in_port,
+                                  instructions=inst,
+                                  data=msg.data)
+                
+                    datapath.send_msg(out)
+    
+        @set_ev_cls(ofp_event.EventOFPPortStatus, MAIN_DISPATCHER)
+        def _port_status_handler(self, ev):
+            msg = ev.msg
+            reason = ev.reason
+            port_no = msg.desc.port_no
+            
+            ofproto = msg.datapath.ofproto
+            
+            if reason ==ofproto.OFPPR_ADD:
+                self.logger.info("port added %s", port_no)
+            elif reason == ofproto_OFPPR_DELETE:
+                self.logger.info("port deleted %s", port_no)
+            elif reason == ofproto.OFPPR_MODIFY:
+                self.logger.info("port modified %s", port_no)
+            else:
+                self.logger.info("Illegal port state %s %s", port_no, reason)
+            

@@ -2,7 +2,7 @@
 #
 # UAV host <=> uav_sw <=> gcs_sw <=> GCS host
 #		Run topology
-# - sudo -E mn --controller=remote,ip=127.0.0.1,port=6653 --custom topology.py --topo network_from_truck
+# - sudo -E mn --custom topology.py --topo network_from_truck --controller=remote,ip=127.0.0.1,port=6653  --switch=ovs,protocols=OpenFlow10 
 #
 #
 from mininet.topo import Topo

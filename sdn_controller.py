@@ -1,5 +1,5 @@
 #Our future controller
-#Run the controller: sudo -E ~/venv-ryu39/bin/ryu-manager --ofp-tcp-listen-port 6653 sdn_controller.py --verbose
+#Run the controller: sudo -E ~/venv-ryu39/bin/ryu-manager --ofp-tcp-listen-port 6653 ./sdn_controller.py --verbose
 
 from ryu.base import app_manager
 from ryu.controller import ofp_event
@@ -58,9 +58,11 @@ class LearningSwitch(app_manager.RyuApp):
             in_port = msg.match['in_port']
             
             self.mac_to_port.setdefault(dpid, {})
-            self.mac_to_port[dpid][src] = in_port
-                
             
+
+            self.mac_to_port[dpid][src] = in_port
+            self.logger.info("Switch %s learned %s is at port %s", dpid, src, in_port)
+
                 
                 
             if dst in self.mac_to_port[dpid]:
@@ -70,37 +72,43 @@ class LearningSwitch(app_manager.RyuApp):
                 
             actions = [parser.OFPActionOutput(out_port)]
                 
-            self.logger.info("Switch %s learned %s is at port %s", dpid, src, in_port)
+           
             
             if out_port != ofproto.OFPP_FLOOD:
                 match = parser.OFPMatch(eth_dst=dst)
                 inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
                 
-                mod = parser.OFPFlowMod(datapath=datapath,
-                                        priority=10,
-                                        match=match,
-                                        instructions=inst,
-                                        buffer_id=msg.buffer_id)
+               # mod = parser.OFPFlowMod(datapath=datapath,
+                #                        priority=10,
+                 #                     instructions=inst,
+                   #                     buffer_id=msg.buffer_id)
                 
-                datapath.send_msg(mod)
+                #datapath.send_msg(mod)
             
-                if msg.buffer_id == ofproto.OFP_NO_BUFFER:
-                    out = parser.OFPPacketOut(datapath=datapath,
-                                              buffer_id=msg.buffer_id,
-                                              in_port=in_port,
+                if msg.buffer_id != ofproto.OFP_NO_BUFFER:
+                    flow_mod = parser.OFPFlowMod(datapath=datapath,
+                                              priority=10,
+                                              match=match,
                                               instructions=inst,
-                                              data = msg.data)
+                                              buffer_id=msg.buffer_id)
             
-                    datapath.send_msg(out)
                 else:
-                    out = parser.OFPPacketOut(datapath=datapath,
-                                  buffer_id=ofproto.OFP_NO_BUFFER,
-                                  in_port=in_port,
-                                  instructions=inst,
-                                  data=msg.data)
+                    flow_mod = parser.OFPFlowMod(datapath=datapath,
+                                              priority=10,
+                                              match=match,
+                                              instructions=inst)
                 
-                    datapath.send_msg(out)
-    
+                datapath.send_msg(flow_mod)
+                
+            data = None if msg.buffer_id != ofproto.OFP_NO_BUFFER else msg.data
+            packet_out = parser.OFPPacketOut(datapath=datapath,
+                                             buffer_id=msg.buffer_id,
+                                             in_port=in_port,
+                                             actions=actions,
+                                             data=data)
+            datapath.send_msg(packet_out)
+                
+     
         @set_ev_cls(ofp_event.EventOFPPortStatus, MAIN_DISPATCHER)
         def _port_status_handler(self, ev):
             msg = ev.msg

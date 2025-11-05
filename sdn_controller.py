@@ -38,6 +38,7 @@ class LearningSwitch(app_manager.RyuApp):
                                     match=match, instructions=inst)
 
             datapath.send_msg(mod)
+        
         @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
         def packet_in_handler(self, ev):
             msg = ev.msg
@@ -109,20 +110,19 @@ class LearningSwitch(app_manager.RyuApp):
             datapath.send_msg(packet_out)
                 
      
-        @set_ev_cls(ofp_event.EventOFPPortStatus, MAIN_DISPATCHER)
-        def _port_status_handler(self, ev):
-            msg = ev.msg
-            reason = ev.reason
-            port_no = msg.desc.port_no
+   #     @set_ev_cls(ofp_event.EventOFPPortStatus, MAIN_DISPATCHER)
+    #    def _port_status_handler(self, ev):
+     #       msg = ev.msg
+      #      reason = ev.reason
+       #     port_no = msg.desc.port_no
+        #    
+         #   ofproto = msg.datapath.ofproto
             
-            ofproto = msg.datapath.ofproto
-            
-            if reason ==ofproto.OFPPR_ADD:
-                self.logger.info("port added %s", port_no)
-            elif reason == ofproto_OFPPR_DELETE:
-                self.logger.info("port deleted %s", port_no)
-            elif reason == ofproto.OFPPR_MODIFY:
-                self.logger.info("port modified %s", port_no)
-            else:
-                self.logger.info("Illegal port state %s %s", port_no, reason)
-            
+       #     if reason ==ofproto.OFPPR_ADD:
+        #        self.logger.info("port added %s", port_no)
+         #   elif reason == ofproto_OFPPR_DELETE:
+        #        self.logger.info("port deleted %s", port_no)
+        #     elif reason == ofproto.OFPPR_MODIFY:
+         #       self.logger.info("port modified %s", port_no)
+         #   else:
+          #      self.logger.info("Illegal port state %s %s", port_no, reason)

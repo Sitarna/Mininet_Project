@@ -18,3 +18,4 @@ run: controller topology
 
 kill_xterm:
 	killall xterm
+	sudo mn -c

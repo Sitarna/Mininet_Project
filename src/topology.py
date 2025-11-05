@@ -19,12 +19,20 @@ class network_from_truck(Topo):
     def build(self, template='X'):
         # Hosts
         gcs = self.addHost('gcs', ip='10.0.0.1/24')
-        uav = self.addHost('uav', ip='10.0.0.2/24')
+        uav_1 = self.addHost('UAV_1', ip='10.0.0.2/24')
+        uav_2 = self.addHost('UAV_2', ip='10.0.0.3/24')
+        uav_3 = self.addHost('UAV_3', ip='10.0.0.4/24')
+        uav_4 = self.addHost('UAV_4', ip='10.0.0.5/24')
+        uav_5 = self.addHost('UAV_5', ip='10.0.0.6/24')
         
         
         # Switches
-        gcs_sw = self.addSwitch('gcs_sw', dpid='0000000000000001')
-        uav_sw = self.addSwitch('uav_sw', dpid='0000000000000002')
+        gcs_sw = self.addSwitch('gcs_sw'  , dpid='0000000000000001')
+        uav_sw_1 = self.addSwitch('uav_sw_1', dpid='0000000000000002')
+        uav_sw_2 = self.addSwitch('uav_sw_2', dpid='0000000000000003')
+        uav_sw_3 = self.addSwitch('uav_sw_3', dpid='0000000000000004')
+        uav_sw_4 = self.addSwitch('uav_sw_4', dpid='0000000000000005')
+        uav_sw_5 = self.addSwitch('uav_sw_5', dpid='0000000000000006')
         
 # Template X — Control/C2: small UDP, high priority, low latency/jitter    
 # bandwidth is 128 kbps, 2 milliseconds latency, 0% packet loss
@@ -44,8 +52,21 @@ class network_from_truck(Topo):
             raise ValueError("Unknown template. Use 'X' or 'Y'.")
 
         # Links
-        self.addLink(uav,    uav_sw, cls=TCLink, bw=bw, delay=delay, loss=loss)
-        self.addLink(uav_sw, gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss)
+        self.addLink(uav_1,    uav_sw_1, cls=TCLink, bw=bw, delay=delay, loss=loss)
+        self.addLink(uav_sw_1, gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss)
+        
+        self.addLink(uav_2,    uav_sw_2, cls=TCLink, bw=bw, delay=delay, loss=loss)
+        self.addLink(uav_sw_2, gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss)
+        
+        self.addLink(uav_3,    uav_sw_3, cls=TCLink, bw=bw, delay=delay, loss=loss)
+        self.addLink(uav_sw_3, gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss)
+        
+        self.addLink(uav_4,    uav_sw_4, cls=TCLink, bw=bw, delay=delay, loss=loss)
+        self.addLink(uav_sw_4, gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss)
+        
+        self.addLink(uav_5,    uav_sw_5, cls=TCLink, bw=bw, delay=delay, loss=loss)
+        self.addLink(uav_sw_5, gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss)
+                
         self.addLink(gcs,    gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss)
         
 def main(template='X'):
@@ -60,11 +81,12 @@ def main(template='X'):
     net.start()
 
     print(f"\n=== Topology started with template {template} ===")
-    uav, gcs = net.get('uav'), net.get('gcs')
-    print(f"GCS IP: {gcs.IP()}")
-    print(f"UAV IP: {uav.IP()}")
-    print("Testing connectivity:")
-    net.ping([uav, gcs])
+    gcs_host = net.get('gcs')
+    print(f"GCS IP: {gcs_host.IP()}")
+    for i in range(1, 6):
+        uav_host = net.get(f'UAV_{i}')
+        print(f"UAV {i} IP: {uav_host.IP()}")
+        net.ping([gcs_host, uav_host])
 
     CLI(net)
     net.stop()

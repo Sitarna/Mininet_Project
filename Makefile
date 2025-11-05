@@ -1,4 +1,7 @@
 #Makefile 
+# If you want to run the program write in your terminal: run
+#To exit the xterm write in terminal: killall xterm
+
 
 # Define Python interpreter
 PYTHON = python3

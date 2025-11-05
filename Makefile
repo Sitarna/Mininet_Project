@@ -1,12 +1,13 @@
-#Makefile 
-# If you want to run the program write in your terminal: run
-#To exit the xterm write in terminal: killall xterm
-
 
 # Define Python interpreter
 PYTHON = python3
 
 .PHONY: run controller topology
+
+help:
+	@echo "Makefile:"
+	@echo "If you want to run the program write in your terminal: run"
+	@echo "To exit the xterm write in terminal: kill"
 
 # Open xterm for the Ryu controller
 controller:

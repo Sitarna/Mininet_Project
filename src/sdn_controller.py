@@ -15,6 +15,16 @@ class LearningSwitch(app_manager.RyuApp):
         def __init__(self, *args, **kwargs):
             super(LearningSwitch, self).__init__(*args, **kwargs)
             self.mac_to_port = {}
+            
+            #Prioritites for later. Think that priority 1 is a drone looking for people
+            #and prio 3 is a media drone
+            self.drone_priority = {
+                "10.0.0.2": 1,
+                "10.0.0.3": 2,
+                "10.0.0.4": 3,
+                "10.0.0.5": 3,
+                "10.0.0.6": 3
+                }
 
         @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
         def switch_feature_handler(self, ev):
@@ -79,13 +89,6 @@ class LearningSwitch(app_manager.RyuApp):
                 match = parser.OFPMatch(eth_dst=dst)
                 inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
                 
-               # mod = parser.OFPFlowMod(datapath=datapath,
-                #                        priority=10,
-                 #                     instructions=inst,
-                   #                     buffer_id=msg.buffer_id)
-                
-                #datapath.send_msg(mod)
-            
                 if msg.buffer_id != ofproto.OFP_NO_BUFFER:
                     flow_mod = parser.OFPFlowMod(datapath=datapath,
                                               priority=10,
@@ -108,21 +111,3 @@ class LearningSwitch(app_manager.RyuApp):
                                              actions=actions,
                                              data=data)
             datapath.send_msg(packet_out)
-                
-     
-   #     @set_ev_cls(ofp_event.EventOFPPortStatus, MAIN_DISPATCHER)
-    #    def _port_status_handler(self, ev):
-     #       msg = ev.msg
-      #      reason = ev.reason
-       #     port_no = msg.desc.port_no
-        #    
-         #   ofproto = msg.datapath.ofproto
-            
-       #     if reason ==ofproto.OFPPR_ADD:
-        #        self.logger.info("port added %s", port_no)
-         #   elif reason == ofproto_OFPPR_DELETE:
-        #        self.logger.info("port deleted %s", port_no)
-        #     elif reason == ofproto.OFPPR_MODIFY:
-         #       self.logger.info("port modified %s", port_no)
-         #   else:
-          #      self.logger.info("Illegal port state %s %s", port_no, reason)

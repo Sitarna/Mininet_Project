@@ -25,6 +25,36 @@ class LearningSwitch(app_manager.RyuApp):
                 "10.0.0.5": 3,
                 "10.0.0.6": 3
                 }
+        #should be self explanatory
+        def get_priority(self, pkt):
+            ip_pkt = pkt.get_protocol(ipv4.ipv4)
+            if ip_pkt:
+                return self.drone_priority.get(ip_pkt.src,3)
+            return 3
+        
+        #Get our prioritites straight
+        def setup_meters(self, datapath):
+            ofproto = datapath.ofproto
+            parser = datapath.ofproto_parser
+            
+            #Just temporary rates depending on priority
+            #change rates later :D
+            rates = {1: 5000, 2: 3000, 3: 1000}
+            burst = 100
+            
+            self.meter_id_map = {}
+            
+            for prio, rate in rates.items():
+                meter_id = prio
+                bands = [parser.OFPMeterBandDrop(rate=rate, burst_size=burst)]
+                mod = parser.OFPMeterMod(datapath=datapath,
+                                         comman=ofproto.OFPMC_ADD,
+                                         flags=ofproto.OFPMF_KBS,
+                                         meter_id=meter_id,
+                                         bands=bands)
+                
+                datapath.send_msg(mod)
+                self.meter_id_map[prio] = meter_id
 
         @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
         def switch_feature_handler(self, ev):
@@ -48,6 +78,8 @@ class LearningSwitch(app_manager.RyuApp):
                                     match=match, instructions=inst)
 
             datapath.send_msg(mod)
+            
+            self.setup_meters(datapath)
         
         @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
         def packet_in_handler(self, ev):

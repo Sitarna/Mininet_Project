@@ -101,7 +101,7 @@ class LearningSwitch(app_manager.RyuApp):
         def provision_async(self, template):
             def worker():
                 result = provision(template)
-                self.logger.info("Provision finished: %s", result)
+                #self.logger.info("Provision finished with code: %s, template: %s", result, template)
             t = Thread(target=worker)
             t.daemon = True
             t.start()
@@ -127,10 +127,11 @@ class LearningSwitch(app_manager.RyuApp):
             
             self.mac_to_port.setdefault(dpid, {})
             
-            self.mac_to_port[dpid][src] = in_port
-            self.logger.info("Switch %s learned %s is at port %s", dpid, src, in_port)
+            if src not in self.mac_to_port[dpid]:
+                self.logger.info("Switch %s learned %s is at port %s", dpid, src, in_port)
 
-                
+            self.mac_to_port[dpid][src] = in_port
+            
                 
             if dst in self.mac_to_port[dpid]:
                 out_port = self.mac_to_port[dpid][dst]

@@ -27,6 +27,8 @@ def provision(template: str):
 
     time.sleep(1)
     print(f"[API] Link provisioned with template {template}")
+    
+    return 0
 
 
 def measure(duration: int = 60, host_name: str = 'UAV_1'):

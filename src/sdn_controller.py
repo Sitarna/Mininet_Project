@@ -10,6 +10,7 @@ from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet, ethernet, ether_types, ipv4
 from ryu.lib.mac import haddr_to_bin
+from threading import Thread
 
 from client import provision
 import time 
@@ -81,10 +82,6 @@ class LearningSwitch(app_manager.RyuApp):
             self.setup_meters(datapath)
 
             match = parser.OFPMatch()
-            
-            template = "default_qos_template"
-            result = provision(template)
-            self.logger.info("Provision result: %s", result)
         #THis catches all packages: Later its possible to use eg
         #paerser.OFPMatch(in_port=1, eth_type=0x0800, ipv4_dst="10.0.0.2")
 
@@ -101,6 +98,14 @@ class LearningSwitch(app_manager.RyuApp):
             
             self.setup_meters(datapath)
         
+        def provision_async(self, template):
+            def worker():
+                result = provision(template)
+                self.logger.info("Provision finished: %s", result)
+            t = Thread(target=worker)
+            t.daemon = True
+            t.start()
+
         @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
         def packet_in_handler(self, ev):
             msg = ev.msg
@@ -138,6 +143,9 @@ class LearningSwitch(app_manager.RyuApp):
             
             if out_port != ofproto.OFPP_FLOOD:
                 priority_level = self.get_priority(pkt)
+                template = f"priority_{priority_level}"
+                self.provision_async(template)
+
                 meter_id = self.meter_id_map.get(priority_level, 3)                
                 
                 match = parser.OFPMatch(eth_dst=dst)

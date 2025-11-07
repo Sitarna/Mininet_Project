@@ -1,0 +1,38 @@
+#To run the mininet with this controller
+#Start this controller with "ryu-manager l2.py"
+#And start the mininet with " mn --topo=single,3 --controller=remote,ip=127.0.0.1 --switch=ovs,protocols=OpenFlow10 "
+
+from ryu.base import app_manager
+from ryu.controller import ofp_event
+from ryu.controller.handler import MAIN_DISPATCHER
+from ryu.controller.handler import set_ev_cls
+from ryu.ofproto import ofproto_v1_0
+
+class L2Switch(app_manager.RyuApp):
+	OFP_VERSION = [ofproto_v1_0.OFP_VERSION]
+
+	def __init__(self, *args, **kwargs):
+		super(L2Switch, self).__init__(*args, **kwargs)
+
+	@set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
+	def packet_in_handler(self, ev):
+		msg = ev.msg
+		dp = msg.datapath
+		ofp = dp.ofproto
+		ofp_parser = dp.ofproto_parser
+
+		actions = [ofp_parser.OFPActionOutput(ofp.OFPP_FLOOD)]
+
+		data = None
+		if msg.buffer_id == ofp.OFP_NO_BUFFER:
+			data = msg.data
+
+		out = ofp_parser.OFPPacketOut(
+			datapath = dp,
+			buffer_id = msg.buffer_id,
+			in_port = msg.in_port,
+			actions = actions, data = data)
+
+		self.logger.info("Packet in: switch=%s in_port=%s", dp.id, msg.in_port)
+
+		dp.send_msg(out)

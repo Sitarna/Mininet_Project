@@ -39,6 +39,7 @@ def create_folder(c: int = 2):
     
     
 # integrate with Ryu later
+# Everything in provison is temporary schould work with ryu
 def provision(template: str):
     """Provision {"template":"X"} – create the Virtual QoS Link"""
     print(f"[API] Creating the Virtual QoS Link with template: {template}")
@@ -47,7 +48,6 @@ def provision(template: str):
 
     time.sleep(1)
     print(f"[API] Link provisioned with template {template}")
-    return {"status": "ok", "template": template}
 
 
 def measure(duration: int = 60, host_name: str = 'UAV_1'):
@@ -114,7 +114,6 @@ def measure(duration: int = 60, host_name: str = 'UAV_1'):
 
 
     print("[API] KPI measurement completed.")
-    return {"status": "ok", "duration": duration}
 
 
 def report():
@@ -123,15 +122,13 @@ def report():
     folder_path = create_folder(2)
     data = Path(folder_path / "kpi_results.txt").read_text()
     print(data)
-    return report
 
-
+# should be canged with ryu controller
 def teardown():
     """Remove QoS rules."""
     print("[API] Tearing down QoS link...")
     Path("current_template.txt").unlink(missing_ok=True)
     print("[API] Link removed.")
-    return {"status": "ok"}
 
 
 def main():

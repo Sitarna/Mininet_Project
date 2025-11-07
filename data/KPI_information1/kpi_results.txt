@@ -1,0 +1,21 @@
+=========   KPI MESURMENTS UAV_1  ===========
+KPI: Latency, Jitter, Packet loss, Goodput 
+
+ping test (RTT + loss)
+PING 10.0.0.1 (10.0.0.1) 56(84) bytes of data.
+64 bytes from 10.0.0.1: icmp_seq=1 ttl=64 time=12.7 ms
+64 bytes from 10.0.0.1: icmp_seq=2 ttl=64 time=12.3 ms
+64 bytes from 10.0.0.1: icmp_seq=3 ttl=64 time=12.4 ms
+64 bytes from 10.0.0.1: icmp_seq=4 ttl=64 time=12.1 ms
+64 bytes from 10.0.0.1: icmp_seq=5 ttl=64 time=12.3 ms
+
+--- 10.0.0.1 ping statistics ---
+packets transmitted = 5
+packets received = 5
+packet loss = 0%
+time = 4005ms
+fastest packet = 12.104 ms
+avrage Latency = 12.361 ms
+slowest packet = 12.719 ms
+        Jitter = 0.206 ms
+

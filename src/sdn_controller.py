@@ -6,7 +6,7 @@ from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
-from ryu.lib.packet import packet, ethernet, ether_types
+from ryu.lib.packet import packet, ethernet, ether_types, ipv4
 from ryu.lib.mac import haddr_to_bin
 
 class LearningSwitch(app_manager.RyuApp):
@@ -16,7 +16,7 @@ class LearningSwitch(app_manager.RyuApp):
             super(LearningSwitch, self).__init__(*args, **kwargs)
             self.mac_to_port = {}
             
-            #Prioritites for later. Think that priority 1 is a drone looking for people
+            #Prioritites for later. Think that priority 1 is a rescue/search, prio 2 is an e.g surveillance
             #and prio 3 is a media drone
             self.drone_priority = {
                 "10.0.0.2": 1,
@@ -25,6 +25,7 @@ class LearningSwitch(app_manager.RyuApp):
                 "10.0.0.5": 3,
                 "10.0.0.6": 3
                 }
+            self.meters_installed = {}
         #should be self explanatory
         def get_priority(self, pkt):
             ip_pkt = pkt.get_protocol(ipv4.ipv4)
@@ -34,6 +35,8 @@ class LearningSwitch(app_manager.RyuApp):
         
         #Get our prioritites straight
         def setup_meters(self, datapath):
+            if self.meters_installed.get(datapath.id, False):
+                return
             ofproto = datapath.ofproto
             parser = datapath.ofproto_parser
             
@@ -42,19 +45,23 @@ class LearningSwitch(app_manager.RyuApp):
             rates = {1: 5000, 2: 3000, 3: 1000}
             burst = 100
             
-            self.meter_id_map = {}
+            self.meter_id_map = {1:1, 2:2, 3:3}
+            
+            self.meters_installed[datapath.id] = True
             
             for prio, rate in rates.items():
                 meter_id = prio
                 bands = [parser.OFPMeterBandDrop(rate=rate, burst_size=burst)]
                 mod = parser.OFPMeterMod(datapath=datapath,
-                                         comman=ofproto.OFPMC_ADD,
-                                         flags=ofproto.OFPMF_KBS,
+                                         command=ofproto.OFPMC_ADD,
+                                         flags=ofproto.OFPMF_KBPS,
                                          meter_id=meter_id,
                                          bands=bands)
                 
                 datapath.send_msg(mod)
                 self.meter_id_map[prio] = meter_id
+                
+            ##TODO: priority queues?
 
         @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
         def switch_feature_handler(self, ev):
@@ -63,6 +70,8 @@ class LearningSwitch(app_manager.RyuApp):
             datapath = ev.msg.datapath
             ofproto = datapath.ofproto
             parser = datapath.ofproto_parser
+            
+            self.setup_meters(datapath)
 
             match = parser.OFPMatch()
         #THis catches all packages: Later its possible to use eg
@@ -118,8 +127,12 @@ class LearningSwitch(app_manager.RyuApp):
            
             
             if out_port != ofproto.OFPP_FLOOD:
+                priority_level = self.get_priority(pkt)
+                meter_id = self.meter_id_map.get(priority_level, 3)                
+                
                 match = parser.OFPMatch(eth_dst=dst)
-                inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
+                inst = [parser.OFPInstructionMeter(meter_id, ofproto.OFPIT_METER),
+                        parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
                 
                 if msg.buffer_id != ofproto.OFP_NO_BUFFER:
                     flow_mod = parser.OFPFlowMod(datapath=datapath,

@@ -15,6 +15,7 @@ import shlex
 import subprocess
 from pathlib import Path
 from measure import ping, run_iperf3, create_folder
+import time
 
 # integrate with Ryu later
 # Everything in provison is temporary schould work with ryu

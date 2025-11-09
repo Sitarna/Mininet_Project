@@ -1,6 +1,7 @@
 # install: sudo apt install iperf3 -y
 # mininet> xterm gcs &
-# iperf3 -s
+#
+#iperf3 -s -J -p 5201
 """
 - API (illustrative)
 - POST /provision {"template":"X"} – create the Virtual QoS Link.
@@ -8,36 +9,13 @@
 - GET /report – fetch results.
 - POST /teardown – remove rules.
 """
-
-import json
-import subprocess
-import time
 import sys
+import json
+import shlex
+import subprocess
 from pathlib import Path
-import os
+from measure import ping, run_iperf3, create_folder
 
-
-def create_folder(c: int = 2):
-    #create folder
-    base_dir = Path("data")
-    base_dir.mkdir(exist_ok=True)
-    i = 1
-    while True:
-        folder_path = base_dir / f"KPI_information{i}"
-        if not os.path.exists(folder_path):
-            if c == 1:
-                folder_path.mkdir()
-                print(f"Created folder: {folder_path}")
-                return folder_path;
-                    
-            elif c == 2:
-                return base_dir / f"KPI_information{i-1}"   
-            break
-    
-        else:
-            i += 1
-    
-    
 # integrate with Ryu later
 # Everything in provison is temporary schould work with ryu
 def provision(template: str):
@@ -51,81 +29,38 @@ def provision(template: str):
 
 
 def measure(duration: int = 60, host_name: str = 'UAV_1'):
-    """Run KPI measurement between GCS and UAV"""
-    print(f"[API] Measuring KPIs for {duration}s...")
-    new_lines = []
-    new_lines.append(f"=========   KPI MESURMENTS {host_name}  ===========")
-    new_lines.append("KPI: Latency, Jitter, Packet loss, Goodput \n")
-    new_lines.append("ping test (RTT + loss)")
-    
-    # ping test (RTT + loss)
-    cmd = ["ping", "-c", str(duration), "10.0.0.1"]
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
-        
-    name_map = {
-    "min": "fastest packet",
-    "avg": "avrage Latency",
-    "max": "slowest packet",
-    "mdev":"        Jitter"
-    }
-
-    for line in result.stdout.splitlines():
-        if line.startswith("rtt min/avg/max"):
-            labels_part, values_part = line.split("=")
-            labels = labels_part.strip().split()[1].split("/")      
-            values = values_part.strip().replace(" ms", "").split("/")
-            new_lines.extend([f"{name_map[label]} = {value} ms" for label, value in zip(labels, values)])
-        
-        elif "packets transmitted" in line:
-            parts = [part.strip() for part in line.split(",")]
-            for part in parts:
-                if "transmitted" in part:
-                    key, value = "packets transmitted", part.split()[0]
-                elif "received" in part:
-                    key, value = "packets received", part.split()[0]
-                elif "packet loss" in part:
-                    key, value = "packet loss", part.split()[0]
-                elif "time" in part:
-                    key, value = "time", part.split()[1]
-                else:
-                    key, value = part, ""
-                new_lines.append(f"{key} = {value}")
-        else:
-            new_lines.append(line)
-            
+    """POST /measure {"duration":60} – run KPI collection."""
 
     while True:
-            print("Do you want to create a new folder? (y/n): ", end="")
-            answer = input().strip().lower()
+        print("Do you want to create a new folder? (y/n): ", end="")
+        answer = input().strip().lower()
 
-            if answer in ('y', 'yes'):
-                folder_path = create_folder(1)
-                break
-            elif answer in ('n', 'no'):
-                folder_path = create_folder(2)
-                break
-            else:
-                print("Please write 'y' or 'n'.")
-        
-
-    kpi_file = folder_path / "kpi_results.txt"
-    with kpi_file.open("a") as f:
-        f.write("\n".join(new_lines) + "\n\n")
-
-
+        if answer in ('y', 'yes'):
+            folder_path = create_folder(1)
+            break
+        elif answer in ('n', 'no'):
+            folder_path = create_folder(2)
+            break
+        else:
+            print("Please write 'y' or 'n'.")
+   
+    ping(duration, host_name, folder_path)  
+    run_iperf3(duration, host_name, folder_path)
     print("[API] KPI measurement completed.")
 
-
 def report():
-    """Return KPI report as JSON."""
+    """GET /report – fetch results."""
+
     print("[API] Fetching KPI report...")
     folder_path = create_folder(2)
     data = Path(folder_path / "kpi_results.txt").read_text()
+    print("\n \n \n")
     print(data)
 
-# should be canged with ryu controller
+# should be canged with ryu
 def teardown():
     """Remove QoS rules."""
+    
     print("[API] Tearing down QoS link...")
     Path("current_template.txt").unlink(missing_ok=True)
     print("[API] Link removed.")

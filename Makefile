@@ -6,8 +6,8 @@ PYTHON = python3
 
 help:
 	@echo "Makefile:"
-	@echo "If you want to run the program write in your terminal: run"
-	@echo "To exit the xterm write in terminal: kill"
+	@echo "If you want to run the program write in your terminal: make run"
+	@echo "To exit the xterm write in terminal: make kill"
 
 # Open xterm for the Ryu controller
 controller:

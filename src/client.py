@@ -3,6 +3,13 @@
 #
 #iperf3 -s -J -p 5201
 """
+From Flavio:
+
+Measure – While active, the server runs lightweight tests and collects
+KPIs (RTT/latency, jitter p95, loss, goodput).
+Report / Teardown – KPIs are exposed via API (JSON/CSV).
+The link can be removed on request.
+
 - API (illustrative)
 - POST /provision {"template":"X"} – create the Virtual QoS Link.
 - POST /measure {"duration":60} – run KPI collection.
@@ -14,7 +21,7 @@ import json
 import shlex
 import subprocess
 from pathlib import Path
-from measure import ping, run_iperf3, create_folder
+from measure import get_kpi, create_folder
 
 # integrate with Ryu later
 # Everything in provison is temporary schould work with ryu
@@ -30,29 +37,16 @@ def provision(template: str):
 
 def measure(duration: int = 60, host_name: str = 'UAV_1'):
     """POST /measure {"duration":60} – run KPI collection."""
-
-    while True:
-        print("Do you want to create a new folder? (y/n): ", end="")
-        answer = input().strip().lower()
-
-        if answer in ('y', 'yes'):
-            folder_path = create_folder(1)
-            break
-        elif answer in ('n', 'no'):
-            folder_path = create_folder(2)
-            break
-        else:
-            print("Please write 'y' or 'n'.")
-   
-    ping(duration, host_name, folder_path)  
-    run_iperf3(duration, host_name, folder_path)
+ 
+    get_kpi(duration, host_name)
+    
     print("[API] KPI measurement completed.")
 
 def report():
     """GET /report – fetch results."""
 
     print("[API] Fetching KPI report...")
-    folder_path = create_folder(2)
+    folder_path = create_folder(0)
     data = Path(folder_path / "kpi_results.txt").read_text()
     print("\n \n \n")
     print(data)

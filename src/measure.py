@@ -1,13 +1,11 @@
 #Will take measures of the network
-#mininet> UAV_1 iperf3 -c 10.0.0.1 -u -b 10M -t 2 -J
-
-
 import json
 import subprocess
 import time
 import sys
 import os
 from pathlib import Path
+
 
 def create_folder(c: int = 2):
     #create data if data does not exist
@@ -23,7 +21,7 @@ def create_folder(c: int = 2):
                 print(f"Created folder: {folder_path}")
                 return folder_path;
                     
-            elif c == 2:
+            elif c == 0:
                 # return name of latest created folder
                 return base_dir / f"KPI_information{i-1}"   
             break
@@ -41,8 +39,7 @@ def ping(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 'data'
     all_output = []  
     new_lines = []   
     new_lines.append(f"=========   KPI MEASUREMENTS {host_name}  ==========")
-    new_lines.append("KPI: Latency, Jitter, Packet loss, Goodput\n")
-    
+        
     # ping gcs with ip 10.0.0.1
     cmd = ["ping", "-c", str(duration), "10.0.0.1"]
     result = subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
@@ -59,6 +56,9 @@ def ping(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 'data'
         "mdev": "  ping jitter"
     }
     
+    avg_latency = None
+    packet_loss = None
+    
     #parsing the ping output
     for line in result.stdout.splitlines():
         # Extract summary stats
@@ -71,7 +71,9 @@ def ping(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 'data'
                 elif "received" in part:
                     key, value = "packets received", part.split()[0]
                 elif "packet loss" in part:
-                    key, value = "packet loss", part.split()[0]
+                    #key, value = "packet loss", part.split()[0]
+                    key, value = "packet loss", part.split()[0].replace("%", "")
+                    packet_loss = float(value)
                 elif "time" in part:
                     key, value = "time", part.split()[1]
                 else:
@@ -82,15 +84,19 @@ def ping(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 'data'
 
         # Extract latency/jitter
         elif line.startswith("rtt min/avg/max"):
-            _, values_part = line.split("=")
+            # Split and clean up values
+            values_part = line.split("=", 1)[1]
             values = values_part.strip().replace(" ms", "").split("/")
+
+            # Map labels to values safely
             for label, value in zip(change_name.values(), values):
                 entry = f"{label} = {value} ms"
                 new_lines.append(entry)
                 all_output.append(entry)
 
-    print("done with ping")
-    all_output.append("done with ping\n")
+                # Capture average latency
+                if label == "average latency":
+                    avg_latency = float(value)
 
     # Save KPI results
     with kpi_file.open("a") as f:
@@ -99,13 +105,19 @@ def ping(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 'data'
     # Save raw output
     with output_file.open("a") as f:
         f.write("\n".join(all_output) + "\n\n")
+    return avg_latency, packet_loss
 
 def run_iperf3(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 'data'):
     print("run_iperf3")
     try:
         # Run iperf3 client command
-        result = subprocess.run(["iperf3", "-c", "10.0.0.1", "-u","-b", "1M","-t", str(duration),"-p", "5201","-J"],
-            capture_output=True,text=True,check=False)
+        result = subprocess.run(["iperf3", "-c", "10.0.0.1", "-u", "-b", "5M", "-t", str(duration),
+        "-i", "1", "-p", "5201", "--len=512", "-J"], capture_output=True, text=True, check=False)
+
+        if result.stdout.strip() == "":
+            print("iperf3 returned no output!")
+            print("stderr:", result.stderr)
+        
         output = json.loads(result.stdout)
         path = folder_path / "iperf.txt"
 
@@ -118,8 +130,7 @@ def run_iperf3(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 
         print(e.stderr)
     
     print("run_iperf3 done")
-    host_name = host_name
-    calculate_kpis_from_iperf3(host_name, folder_path, path)
+    return path
     
 def calculate_kpis_from_iperf3(host_name: str = 'UAV_1', folder_path: str = 'data', path: str = 'data/output.txt'):
     
@@ -131,8 +142,7 @@ def calculate_kpis_from_iperf3(host_name: str = 'UAV_1', folder_path: str = 'dat
     intervals = data.get("intervals", [])
     if not intervals:
         print("No interval data available")
-        return
-
+    
     total_bytes = 0
     total_seconds = 0
     total_packets = 0
@@ -144,21 +154,84 @@ def calculate_kpis_from_iperf3(host_name: str = 'UAV_1', folder_path: str = 'dat
         total_packets += sum_info.get("packets", 0)
 
     # Goodput in Mbps
-    goodput_mbps = (total_bytes * 8) / total_seconds / 1_000_000 if total_seconds > 0 else 0
+    if (total_seconds > 0):
+        goodput = (total_bytes * 8) / total_seconds / 1000000  
+    else:
+        goodput = 0
+   
+   # Packets per second
+    if (total_seconds > 0):
+        pps = total_packets / total_seconds
+    else:
+        pps = 0
 
-    # Packets per second
-    pps = total_packets / total_seconds if total_seconds > 0 else 0
+    # Jitter    
+    intervals = data.get("intervals", [])
+    jitter_list = []
+    for i in intervals:
+        if "sum" in i and "jitter_ms" in i["sum"]:
+            jitter_list.append(i["sum"]["jitter_ms"])
 
-    # Jitter
-    jitter = data.get("end", {}).get("sum", {}).get("jitter_ms", "Could not find jitter")
+    if jitter_list:
+        udp_jitter = max(jitter_list)  # or average if you prefer
+    else:
+        udp_jitter = data.get("end", {}).get("sum", {}).get("jitter_ms", 0)
     
     new_lines = []
-    new_lines.append(f"\nGoodput: {goodput_mbps:.2f} Mbps")
+    new_lines.append(f"\nGoodput: {goodput:.2f} Mbps")
     new_lines.append(f"Packets per second: {pps:.2f} pps")
-    new_lines.append(f"UDP Jitter: {jitter} ms")
+    new_lines.append(f"UDP Jitter: {udp_jitter} ms")
     
     kpi_file = folder_path / "kpi_results.txt"
     with kpi_file.open("a") as f:
         f.write("\n".join(new_lines) + "\n\n")
+        
+    return goodput, pps, udp_jitter
 
+def get_kpi(duration: int = 60, host_name: str = 'UAV_1'):
+    
+    while True:
+        print("Do you want to create a new folder? (y/n): ", end="")
+        answer = input().strip().lower()
+
+        if answer in ('y', 'yes'):
+            folder_path = create_folder(1)
+            break
+        elif answer in ('n', 'no'):
+            folder_path = create_folder(0)
+            break
+        else:
+            print("Please write 'y' or 'n'.")
+            
+    avg_latency, packet_loss = ping(duration, host_name, folder_path)
+    path = run_iperf3(duration, host_name, folder_path)
+    goodput, pps, udp_jitter = calculate_kpis_from_iperf3(host_name, folder_path, path)
+    
+    SLA_TARGETS = {
+    "latency_ms": 100.0,     # Average RTT <= 100 ms
+    "udp_jitter_ms": 30.0,   # UDP jitter <= 30 ms
+    "packet_loss_pct": 0.5,  # Packet loss <= 0.5%
+    "goodput_mbps": 0.8      # Goodput >= 0.8 Mbps
+    }
+    
+    packet_loss_frac = packet_loss / 100.0
+
+    if (avg_latency <= SLA_TARGETS["latency_ms"] 
+        and udp_jitter <= SLA_TARGETS["udp_jitter_ms"] 
+        and packet_loss_frac <= SLA_TARGETS["packet_loss_pct"] 
+        and goodput >= SLA_TARGETS["goodput_mbps"]):
+       result = "Does complie with your SLA rules" 
+    else:
+        result = "Does NOT complie with your SLA rules"
+    
+    new_lines = []
+    new_lines.append(f"SLA compliance: {result} \n ")
+    new_lines.append(f"Your target: {SLA_TARGETS} \n ")
+    
+    new_lines.append(f"Your result: Latency={avg_latency:.2f} ms, Jitter={udp_jitter:.2f} ms, "
+                f"Loss={packet_loss:.2f}%, Goodput={goodput:.2f} Mbps")
+
+    kpi_file = folder_path / "kpi_results.txt"
+    with kpi_file.open("a") as f:
+        f.write("\n".join(new_lines) + "\n\n")
     

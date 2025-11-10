@@ -22,6 +22,9 @@ import shlex
 import subprocess
 from pathlib import Path
 from measure import get_kpi, create_folder
+from measure import ping, run_iperf3, create_folder
+import time
+
 
 # integrate with Ryu later
 # Everything in provison is temporary schould work with ryu
@@ -33,6 +36,8 @@ def provision(template: str):
 
     time.sleep(1)
     print(f"[API] Link provisioned with template {template}")
+    
+    return 0
 
 
 def measure(duration: int = 60, host_name: str = 'UAV_1'):

@@ -1,5 +1,7 @@
 #Our future controller
 #Run the controller: sudo -E ~/venv-ryu39/bin/ryu-manager --ofp-tcp-listen-port 6653 ./sdn_controller.py --verbose
+import sys, os
+sys.path.append(os.path.dirname(__file__))
 
 from ryu.base import app_manager
 from ryu.controller import ofp_event
@@ -8,6 +10,11 @@ from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet, ethernet, ether_types, ipv4
 from ryu.lib.mac import haddr_to_bin
+from threading import Thread
+
+from client import provision
+import time 
+from pathlib import Path
 
 class LearningSwitch(app_manager.RyuApp):
         OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
@@ -26,6 +33,7 @@ class LearningSwitch(app_manager.RyuApp):
                 "10.0.0.6": 3
                 }
             self.meters_installed = {}
+        
         #should be self explanatory
         def get_priority(self, pkt):
             ip_pkt = pkt.get_protocol(ipv4.ipv4)
@@ -61,7 +69,7 @@ class LearningSwitch(app_manager.RyuApp):
                 datapath.send_msg(mod)
                 self.meter_id_map[prio] = meter_id
                 
-            ##TODO: priority queues?
+
 
         @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
         def switch_feature_handler(self, ev):
@@ -90,6 +98,14 @@ class LearningSwitch(app_manager.RyuApp):
             
             self.setup_meters(datapath)
         
+        def provision_async(self, template):
+            def worker():
+                result = provision(template)
+                #self.logger.info("Provision finished with code: %s, template: %s", result, template)
+            t = Thread(target=worker)
+            t.daemon = True
+            t.start()
+
         @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
         def packet_in_handler(self, ev):
             msg = ev.msg
@@ -111,11 +127,11 @@ class LearningSwitch(app_manager.RyuApp):
             
             self.mac_to_port.setdefault(dpid, {})
             
+            if src not in self.mac_to_port[dpid]:
+                self.logger.info("Switch %s learned %s is at port %s", dpid, src, in_port)
 
             self.mac_to_port[dpid][src] = in_port
-            self.logger.info("Switch %s learned %s is at port %s", dpid, src, in_port)
-
-                
+            
                 
             if dst in self.mac_to_port[dpid]:
                 out_port = self.mac_to_port[dpid][dst]
@@ -128,6 +144,9 @@ class LearningSwitch(app_manager.RyuApp):
             
             if out_port != ofproto.OFPP_FLOOD:
                 priority_level = self.get_priority(pkt)
+                template = f"priority_{priority_level}"
+                self.provision_async(template)
+
                 meter_id = self.meter_id_map.get(priority_level, 3)                
                 
                 match = parser.OFPMatch(eth_dst=dst)

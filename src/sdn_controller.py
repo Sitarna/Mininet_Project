@@ -114,6 +114,7 @@ class LearningSwitch(app_manager.RyuApp):
             self.mac_to_port.setdefault(datapath.id, {})[arp_pkt.src_mac] = in_port
             
             if arp_pkt.opcode == arp.ARP_REQUEST:
+                self.logger.info("An arp package has appeared from switch %s", datapath.id)
                 tgt = arp_pkt.dst_ip
                 if tgt in self.ip_to_host:
                     tgt_mac, _, _ = self.ip_to_host[tgt]
@@ -183,16 +184,16 @@ class LearningSwitch(app_manager.RyuApp):
             #dst_ip = None
             #ip_pkt = pkt.get_protocol(ipv4.ipv4)
             #if ip_pkt:
-                #src_ip = ip_pkt.src
-                #dst_ip = ip_pkt.dst
+            #    src_ip = ip_pkt.src
+            #    dst_ip = ip_pkt.dst
 
-            #allow = True
+            #gcs_ip = "10.0.0.1"
             #if src_ip and dst_ip:
-                #gcs_ip = "10.0.0.1"
+            #    allow = True
             #if not (src_ip == gcs_ip or dst_ip == gcs_ip):
-                #allow = False
+            #    allow = False
             
-            if out_port != ofproto.OFPP_FLOOD:
+            if out_port != ofproto.OFPP_FLOOD: #and allow:
                 priority_level = self.get_priority(pkt)
                 template = f"priority_{priority_level}"
                 self.provision_async(template)
@@ -217,7 +218,14 @@ class LearningSwitch(app_manager.RyuApp):
                                               instructions=inst)
                 
                 datapath.send_msg(flow_mod)
-                
+            #else:
+             #   if not allow:
+             #       match = parser.OFPMatch(eth_src=src, eth_dst=dst)
+             #       flow_mod = parser.OFPFlowMod(datapath=datapath, priority=90,
+             #                                match=match, instructions=[])
+             #       datapath.send_msg(flow_mod)
+             #       self.logger.info("Dropping drone->drone traffic %s -> %s", src_ip, dst_ip)
+                    
             data = None if msg.buffer_id != ofproto.OFP_NO_BUFFER else msg.data
             packet_out = parser.OFPPacketOut(datapath=datapath,
                                              buffer_id=msg.buffer_id,

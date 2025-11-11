@@ -87,7 +87,9 @@ def main(template='X'):
         uav_host = net.get(f'UAV_{i}')
         print(f"UAV {i} IP: {uav_host.IP()}")
         net.ping([gcs_host, uav_host])
-
+    
+  #  print("Starting iperf3 server on GCS...")
+   # gcs_host.cmd('gcs xterm -hold -e "iperf3 -s -J -p 5201" &')
     CLI(net)
     net.stop()
 

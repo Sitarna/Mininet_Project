@@ -27,8 +27,7 @@ def create_folder(c: int = 2):
             break
     
         else:
-            i += 1
-    
+            i += 1  
     
 def ping(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 'data'):
     
@@ -105,6 +104,7 @@ def ping(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 'data'
     # Save raw output
     with output_file.open("a") as f:
         f.write("\n".join(all_output) + "\n\n")
+        
     return avg_latency, packet_loss
 
 def run_iperf3(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 'data'):
@@ -182,6 +182,7 @@ def calculate_kpis_from_iperf3(host_name: str = 'UAV_1', folder_path: str = 'dat
     new_lines.append(f"Packets per second: {pps:.2f} pps")
     new_lines.append(f"UDP Jitter: {udp_jitter} ms")
     
+    # Save KPI results
     kpi_file = folder_path / "kpi_results.txt"
     with kpi_file.open("a") as f:
         f.write("\n".join(new_lines) + "\n\n")
@@ -214,11 +215,9 @@ def get_kpi(duration: int = 60, host_name: str = 'UAV_1'):
     "goodput_mbps": 0.8      # Goodput >= 0.8 Mbps
     }
     
-    packet_loss_frac = packet_loss / 100.0
-
     if (avg_latency <= SLA_TARGETS["latency_ms"] 
         and udp_jitter <= SLA_TARGETS["udp_jitter_ms"] 
-        and packet_loss_frac <= SLA_TARGETS["packet_loss_pct"] 
+        and packet_loss <= SLA_TARGETS["packet_loss_pct"] 
         and goodput >= SLA_TARGETS["goodput_mbps"]):
        result = "Does complie with your SLA rules" 
     else:
@@ -233,6 +232,7 @@ def get_kpi(duration: int = 60, host_name: str = 'UAV_1'):
     new_lines.append(f"Your result: Latency={avg_latency:.2f} ms, Jitter={udp_jitter:.2f} ms, "
                 f"Loss={packet_loss:.2f}%, Goodput={goodput:.2f} Mbps")
 
+    # Save KPI results
     kpi_file = folder_path / "kpi_results.txt"
     with kpi_file.open("a") as f:
         f.write("\n".join(new_lines) + "\n\n")

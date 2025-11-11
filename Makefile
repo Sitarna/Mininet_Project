@@ -6,8 +6,11 @@ PYTHON = python3
 
 help:
 	@echo "Makefile:"
-	@echo "If you want to run the program write in your terminal: make run"
-	@echo "To exit the xterm write in terminal: make kill"
+	@echo "  make run         - Start controller + topology"
+	@echo "  make controller  - Start only the Ryu controller"
+	@echo "  make topology    - Start only the Mininet topology"
+	@echo "  make kill        - Close all xterms and clean up Mininet"
+
 
 # Open xterm for the Ryu controller
 controller:
@@ -17,7 +20,7 @@ controller:
 topology:
 	xterm -hold -e "sudo -E python3 src/topology.py" &
 
-# Run both
+# Run controller, topolog
 run: controller topology
 
 kill:

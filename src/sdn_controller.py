@@ -114,11 +114,11 @@ class LearningSwitch(app_manager.RyuApp):
             self.mac_to_port.setdefault(datapath.id, {})[arp_pkt.src_mac] = in_port
             
             if arp_pkt.opcode == arp.ARP_REQUEST:
-                self.logger.info("An arp package has appeared from switch %s", datapath.id)
+                #self.logger.info("An arp package has appeared from switch %s", datapath.id)
                 tgt = arp_pkt.dst_ip
                 if tgt in self.ip_to_host:
                     tgt_mac, _, _ = self.ip_to_host[tgt]
-                    eth_rep = ethernet.ethernet(dst=eth.src, src=tgt_mac, ethertype=ether.ether.ETH_TYPE_ARP)
+                    eth_rep = ethernet.ethernet(dst=eth.src, src=tgt_mac, ethertype=ether_types.ETH_TYPE_ARP)
                     arp_rep = arp.arp(opcode=arp.ARP_REPLY,
                                       src_mac=tgt_mac,
                                       src_ip=tgt,
@@ -136,6 +136,7 @@ class LearningSwitch(app_manager.RyuApp):
                                               data=p.data)
                     
                     datapath.send_msg(out)
+                    self.logger.info("✅ ARP reply sent: %s -> %s", tgt, arp_pkt.src_ip)
                     return True
                 return False
         
@@ -153,12 +154,18 @@ class LearningSwitch(app_manager.RyuApp):
             
          
             #Ignore LLDP packages
-            if eth.ethertype == 0x88cc or eth is None:
+            if eth is None or eth.ethertype == 0x88cc:
                 return
                 
             dst = eth.dst
             src = eth.src
             in_port = msg.match['in_port']
+            
+            arp_pkt = pkt.get_protocol(arp.arp)
+            if arp_pkt:
+                handled = self.handle_arp(datapath, in_port, eth, arp_pkt, msg)
+                if handled:
+                    return
             
             self.mac_to_port.setdefault(dpid, {})
             
@@ -167,11 +174,7 @@ class LearningSwitch(app_manager.RyuApp):
 
             self.mac_to_port[dpid][src] = in_port
             
-            arp_pkt = pkt.get_protocol(arp.arp)
-            if arp_pkt:
-                handled = self.handle_arp(datapath, in_port, eth, arp_pkt, msg)
-                if handled:
-                    return
+
                 
             if dst in self.mac_to_port[dpid]:
                 out_port = self.mac_to_port[dpid][dst]
@@ -179,19 +182,6 @@ class LearningSwitch(app_manager.RyuApp):
                 out_port = ofproto.OFPP_FLOOD
                 
             actions = [parser.OFPActionOutput(out_port)]
-                
-            #src_ip = None
-            #dst_ip = None
-            #ip_pkt = pkt.get_protocol(ipv4.ipv4)
-            #if ip_pkt:
-            #    src_ip = ip_pkt.src
-            #    dst_ip = ip_pkt.dst
-
-            #gcs_ip = "10.0.0.1"
-            #if src_ip and dst_ip:
-            #    allow = True
-            #if not (src_ip == gcs_ip or dst_ip == gcs_ip):
-            #    allow = False
             
             if out_port != ofproto.OFPP_FLOOD: #and allow:
                 priority_level = self.get_priority(pkt)
@@ -200,31 +190,47 @@ class LearningSwitch(app_manager.RyuApp):
 
                 meter_id = self.meter_id_map.get(priority_level, 3)                
                 
-                match = parser.OFPMatch(eth_dst=dst)
-                inst = [parser.OFPInstructionMeter(meter_id, ofproto.OFPIT_METER),
+                match_fwd = parser.OFPMatch(eth_dst=dst)
+                inst_fwd = [parser.OFPInstructionMeter(meter_id, ofproto.OFPIT_METER),
                         parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
                 
-                if msg.buffer_id != ofproto.OFP_NO_BUFFER:
-                    flow_mod = parser.OFPFlowMod(datapath=datapath,
-                                              priority=10,
-                                              match=match,
-                                              instructions=inst,
-                                              buffer_id=msg.buffer_id)
+#                if msg.buffer_id != ofproto.OFP_NO_BUFFER:
+#                    flow_mod = parser.OFPFlowMod(datapath=datapath,
+#                                              priority=10,
+#                                              match=match,
+#                                              instructions=inst,
+#                                              buffer_id=msg.buffer_id)
             
-                else:
-                    flow_mod = parser.OFPFlowMod(datapath=datapath,
-                                              priority=10,
-                                              match=match,
-                                              instructions=inst)
+#                else:
+#                    flow_mod = parser.OFPFlowMod(datapath=datapath,
+#                                              priority=10,
+#                                              match=match,
+#                                              instructions=inst)
+
+                flow_mod_fwd = parser.OFPFlowMod(datapath=datapath,
+                                                 priority=10,
+                                                 match=match_fwd,
+                                                 instructions=inst_fwd,
+                                                 buffer_id=msg.buffer_id if msg.buffer_id != ofproto.OFP_NO_BUFFER else ofproto.OFP_NO_BUFFER,
+                                                 idle_timeout=0,
+                                                 hard_timeout=0)
+                datapath.send_msg(flow_mod_fwd) #TODO One of the parameters wrong
                 
-                datapath.send_msg(flow_mod)
-            #else:
-             #   if not allow:
-             #       match = parser.OFPMatch(eth_src=src, eth_dst=dst)
-             #       flow_mod = parser.OFPFlowMod(datapath=datapath, priority=90,
-             #                                match=match, instructions=[])
-             #       datapath.send_msg(flow_mod)
-             #       self.logger.info("Dropping drone->drone traffic %s -> %s", src_ip, dst_ip)
+                #Put in the reverse flow: dst ->src
+                match_rev = parser.OFPMatch(eth_src=dst, eth_dst=src)
+                inst_rev = [parser.OFPInstructionMeter(meter_id, ofproto.OFPIT_METER),
+                            parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
+                                                         [parser.OFPActionOutput(in_port)])]
+                
+                flow_mod_rev = parser.OFPFlowMod(datapath=datapath,
+                                                 priority=10,
+                                                 match=match_rev,
+                                                 instructions=inst_rev,
+                                                 idle_timeout=0,
+                                                 hard_timeout=0)
+                datapath.send_msg(flow_mod_rev)
+             
+             
                     
             data = None if msg.buffer_id != ofproto.OFP_NO_BUFFER else msg.data
             packet_out = parser.OFPPacketOut(datapath=datapath,

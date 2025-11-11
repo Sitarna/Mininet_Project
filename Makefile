@@ -14,7 +14,7 @@ help:
 
 # Open xterm for the Ryu controller
 controller:
-	xterm -hold -e "sudo -E ~/venv-ryu39/bin/ryu-manager --ofp-tcp-listen-port 6653 ./src/sdn_controller.py --verbose" &
+	xterm -hold -e "sudo -E env PYTHONPATH=. ~/venv-ryu39/bin/ryu-manager --ofp-tcp-listen-port 6653 src.sdn_controller --verbose" &
 
 # Open xterm for the topology script
 topology:

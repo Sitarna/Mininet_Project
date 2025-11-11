@@ -8,11 +8,11 @@ from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
-from ryu.lib.packet import packet, ethernet, ether_types, ipv4
+from ryu.lib.packet import packet, ethernet, ether_types, ipv4, arp
 from ryu.lib.mac import haddr_to_bin
 from threading import Thread
 
-from client import provision
+from .client import provision
 import time 
 from pathlib import Path
 
@@ -33,6 +33,8 @@ class LearningSwitch(app_manager.RyuApp):
                 "10.0.0.6": 3
                 }
             self.meters_installed = {}
+            self.met_id_map = {}
+            self.ip_to_host = {}
         
         #should be self explanatory
         def get_priority(self, pkt):
@@ -86,18 +88,16 @@ class LearningSwitch(app_manager.RyuApp):
         #paerser.OFPMatch(in_port=1, eth_type=0x0800, ipv4_dst="10.0.0.2")
 
             actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
-                                             ofproto.OFPCML_NO_BUFFER)]
+                                              ofproto.OFPCML_NO_BUFFER)]
         
             inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
-                                                  actions)]
-        
+                                                 actions)]
             mod = parser.OFPFlowMod(datapath=datapath, priority=0,
                                     match=match, instructions=inst)
-
             datapath.send_msg(mod)
-            
             self.setup_meters(datapath)
-        
+            
+ 
         def provision_async(self, template):
             def worker():
                 result = provision(template)
@@ -105,6 +105,39 @@ class LearningSwitch(app_manager.RyuApp):
             t = Thread(target=worker)
             t.daemon = True
             t.start()
+        
+        def handle_arp(self, datapath, in_port, eth, arp_pkt, msg):
+            parser = datapath.ofproto_parser
+            ofproto = datapath.ofproto
+            
+            self.ip_to_host[arp_pkt.src_ip] = (arp_pkt.src_mac, datapath.id, in_port)
+            self.mac_to_port.setdefault(datapath.id, {})[arp_pkt.src_mac] = in_port
+            
+            if arp_pkt.opcode == arp.ARP_REQUEST:
+                tgt = arp_pkt.dst_ip
+                if tgt in self.ip_to_host:
+                    tgt_mac, _, _ = self.ip_to_host[tgt]
+                    eth_rep = ethernet.ethernet(dst=eth.src, src=tgt_mac, ethertype=ether.ether.ETH_TYPE_ARP)
+                    arp_rep = arp.arp(opcode=arp.ARP_REPLY,
+                                      src_mac=tgt_mac,
+                                      src_ip=tgt,
+                                      dst_mac=arp_pkt.src_mac,
+                                      dst_ip=arp_pkt.src_ip)
+                    p = packet.Packet()
+                    p.add_protocol(eth_rep)
+                    p.add_protocol(arp_rep)
+                    p.serialize()
+                    actions = [parser.OFPActionOutput(in_port)]
+                    out = parser.OFPPacketOut(datapath=datapath,
+                                              buffer_id=ofproto.OFP_NO_BUFFER,
+                                              in_port=ofproto.OFPP_CONTROLLER,
+                                              actions=actions,
+                                              data=p.data)
+                    
+                    datapath.send_msg(out)
+                    return True
+                return False
+        
 
         @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
         def packet_in_handler(self, ev):
@@ -117,8 +150,9 @@ class LearningSwitch(app_manager.RyuApp):
             pkt = packet.Packet(msg.data)
             eth = pkt.get_protocol(ethernet.ethernet)
             
+         
             #Ignore LLDP packages
-            if eth.ethertype == 0x88cc:
+            if eth.ethertype == 0x88cc or eth is None:
                 return
                 
             dst = eth.dst
@@ -132,6 +166,11 @@ class LearningSwitch(app_manager.RyuApp):
 
             self.mac_to_port[dpid][src] = in_port
             
+            arp_pkt = pkt.get_protocol(arp.arp)
+            if arp_pkt:
+                handled = self.handle_arp(datapath, in_port, eth, arp_pkt, msg)
+                if handled:
+                    return
                 
             if dst in self.mac_to_port[dpid]:
                 out_port = self.mac_to_port[dpid][dst]
@@ -140,7 +179,18 @@ class LearningSwitch(app_manager.RyuApp):
                 
             actions = [parser.OFPActionOutput(out_port)]
                 
-           
+            #src_ip = None
+            #dst_ip = None
+            #ip_pkt = pkt.get_protocol(ipv4.ipv4)
+            #if ip_pkt:
+                #src_ip = ip_pkt.src
+                #dst_ip = ip_pkt.dst
+
+            #allow = True
+            #if src_ip and dst_ip:
+                #gcs_ip = "10.0.0.1"
+            #if not (src_ip == gcs_ip or dst_ip == gcs_ip):
+                #allow = False
             
             if out_port != ofproto.OFPP_FLOOD:
                 priority_level = self.get_priority(pkt)

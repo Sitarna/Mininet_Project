@@ -11,6 +11,7 @@
 
 <img width="1466" height="1077" alt="image" src="https://github.com/user-attachments/assets/e4d25a9c-6df4-4980-abb6-221195745d0a" />
 
-* when you are done 
+* when you are done
+   
 [Terminal 1 ] make kill
 

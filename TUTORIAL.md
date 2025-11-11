@@ -12,3 +12,4 @@
 
 *when you are done 
 [Terminal 1 ] make kill
+<img width="1918" height="1198" alt="image" src="https://github.com/user-attachments/assets/86921575-d8f6-4c55-9652-3c6bbdd39692" />

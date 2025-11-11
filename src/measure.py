@@ -226,7 +226,9 @@ def get_kpi(duration: int = 60, host_name: str = 'UAV_1'):
     
     new_lines = []
     new_lines.append(f"SLA compliance: {result} \n ")
-    new_lines.append(f"Your target: {SLA_TARGETS} \n ")
+    new_lines.append(f"Your target: latency <= {SLA_TARGETS['latency_ms']} ms, jitter <= {SLA_TARGETS['udp_jitter_ms']} ms, "
+                     f" packet loss <= {SLA_TARGETS['packet_loss_pct']} %, Goodput >= {SLA_TARGETS['goodput_mbps']} mbps")
+
     
     new_lines.append(f"Your result: Latency={avg_latency:.2f} ms, Jitter={udp_jitter:.2f} ms, "
                 f"Loss={packet_loss:.2f}%, Goodput={goodput:.2f} Mbps")

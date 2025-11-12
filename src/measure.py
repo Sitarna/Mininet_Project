@@ -109,9 +109,19 @@ def ping(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 'data'
 
 def run_iperf3(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 'data'):
     print("run_iperf3")
+    # Read template
+    template = Path("current_template.txt").read_text().strip()
+
+    # Set bandwidth based on template
+    if template == "X":
+        bw = "128k"   # 128 kbps 
+    elif template == "Y":
+        bw = "4M"     # 4 Mbps
+    else:
+        bw = "1M"
     try:
         # Run iperf3 client command
-        result = subprocess.run(["iperf3", "-c", "10.0.0.1", "-u", "-b", "5M", "-t", str(duration),
+        result = subprocess.run(["iperf3", "-c", "10.0.0.1", "-u", "-b", bw, "-t", str(duration),
         "-i", "1", "-p", "5201", "--len=512", "-J"], capture_output=True, text=True, check=False)
 
         if result.stdout.strip() == "":
@@ -146,37 +156,18 @@ def calculate_kpis_from_iperf3(host_name: str = 'UAV_1', folder_path: str = 'dat
     total_bytes = 0
     total_seconds = 0
     total_packets = 0
-
-    for interval in intervals:
-        sum_info = interval.get("sum", {})
-        total_bytes += sum_info.get("bytes", 0)
-        total_seconds += sum_info.get("seconds", 0)
-        total_packets += sum_info.get("packets", 0)
-
-    # Goodput in Mbps
-    if (total_seconds > 0):
-        goodput = (total_bytes * 8) / total_seconds / 1000000  
-    else:
-        goodput = 0
-   
-   # Packets per second
-    if (total_seconds > 0):
-        pps = total_packets / total_seconds
-    else:
-        pps = 0
-
-    # Jitter    
-    intervals = data.get("intervals", [])
-    jitter_list = []
-    for i in intervals:
-        if "sum" in i and "jitter_ms" in i["sum"]:
-            jitter_list.append(i["sum"]["jitter_ms"])
-
-    if jitter_list:
-        udp_jitter = max(jitter_list)  # or average if you prefer
-    else:
-        udp_jitter = data.get("end", {}).get("sum", {}).get("jitter_ms", 0)
     
+    data_sum = data.get("end", {}).get("sum", {})
+    total_bytes = data_sum.get("bytes", 0)
+    total_seconds = data_sum.get("seconds", 1)
+    total_packets = data_sum.get("packets", 0)
+    udp_jitter = data_sum.get("jitter_ms", 0)
+    packet_loss_pct = data_sum.get("lost_percent", 0)
+    goodput = (total_bytes * 8) / total_seconds / 1_000_000  # To create Mbps
+    pps = total_packets / total_seconds
+    
+
+
     new_lines = []
     new_lines.append(f"\nGoodput: {goodput:.2f} Mbps")
     new_lines.append(f"Packets per second: {pps:.2f} pps")
@@ -204,36 +195,56 @@ def get_kpi(duration: int = 60, host_name: str = 'UAV_1'):
         else:
             print("Please write 'y' or 'n'.")
             
-    avg_latency, packet_loss = ping(duration, host_name, folder_path)
+   
+    avg_latency, ping_loss = ping(duration, host_name, folder_path)
     path = run_iperf3(duration, host_name, folder_path)
     goodput, pps, udp_jitter = calculate_kpis_from_iperf3(host_name, folder_path, path)
+    template = Path("current_template.txt").read_text().strip()
     
+     # --- Define SLA targets for templates ---
     SLA_TARGETS = {
-    "latency_ms": 100.0,     # Average RTT <= 100 ms
-    "udp_jitter_ms": 30.0,   # UDP jitter <= 30 ms
-    "packet_loss_pct": 0.5,  # Packet loss <= 0.5%
-    "goodput_mbps": 0.8      # Goodput >= 0.8 Mbps
-    }
+        "X": {"latency_ms": 100, "udp_jitter_ms": 30, "packet_loss_pct": 0.5, "goodput_mbps": 0.128},
+        "Y": {"latency_ms": 150, "udp_jitter_ms": 50, "packet_loss_pct": 1.0, "goodput_mbps": 2.0}
+    }[template]
     
-    if (avg_latency <= SLA_TARGETS["latency_ms"] 
-        and udp_jitter <= SLA_TARGETS["udp_jitter_ms"] 
-        and packet_loss <= SLA_TARGETS["packet_loss_pct"] 
+    # UDP packet loss from iperf3
+    with open(path, "r") as f:
+        iperf_data = json.load(f)
+    packet_loss = iperf_data.get("end", {}).get("sum", {}).get("lost_percent", 0)
+
+    # SLA evaluation
+    if (avg_latency <= SLA_TARGETS["latency_ms"]
+        and udp_jitter <= SLA_TARGETS["udp_jitter_ms"]
+        and packet_loss <= SLA_TARGETS["packet_loss_pct"]
         and goodput >= SLA_TARGETS["goodput_mbps"]):
-       result = "Does complie with your SLA rules" 
+        result = "Does comply with your SLA rules"
     else:
-        result = "Does NOT complie with your SLA rules"
-    
+        result = "Does NOT comply with your SLA rules"
+
+    #Write KPI Summary
     new_lines = []
-    new_lines.append(f"SLA compliance: {result} \n ")
-    new_lines.append(f"Your target: latency <= {SLA_TARGETS['latency_ms']} ms, jitter <= {SLA_TARGETS['udp_jitter_ms']} ms, "
-                     f" packet loss <= {SLA_TARGETS['packet_loss_pct']} %, Goodput >= {SLA_TARGETS['goodput_mbps']} mbps")
+    new_lines.append("========= KPI SUMMARY =========")
+    new_lines.append(f"QoS Template: {template} \n")
+    new_lines.append(f"From PING: ")
+    new_lines.append(f"Average latency: {avg_latency:.2f} ms")
+    new_lines.append(f"Ping packet loss: {ping_loss:.2f}% \n")
 
-    
-    new_lines.append(f"Your result: Latency={avg_latency:.2f} ms, Jitter={udp_jitter:.2f} ms, "
-                f"Loss={packet_loss:.2f}%, Goodput={goodput:.2f} Mbps")
+    new_lines.append(f"From IPERF3 (UDP stream):")
+    new_lines.append(f"Goodput: {goodput:.2f} Mbps")
+    new_lines.append(f"UDP Jitter: {udp_jitter:.2f} ms")
+    new_lines.append(f"UDP Packet Loss: {packet_loss:.2f}%")
 
-    # Save KPI results
+    new_lines.append(f"SLA compliance: {result} \n")
+    new_lines.append(f"Your target: latency <= {SLA_TARGETS['latency_ms']} ms, "
+                 f"jitter <= {SLA_TARGETS['udp_jitter_ms']} ms, "
+                     f"loss <= {SLA_TARGETS['packet_loss_pct']}%, "
+                     f"goodput >= {SLA_TARGETS['goodput_mbps']} Mbps")
+
+    new_lines.append(f"Your result:  latency={avg_latency:.2f} ms, jitter={udp_jitter:.2f} ms, "
+                     f"loss={packet_loss:.2f}%, goodput={goodput:.2f} Mbps")
+
+    # Save KPI summary
     kpi_file = folder_path / "kpi_results.txt"
-    with kpi_file.open("a") as f:
+    with kpi_file.open("a", encoding="utf-8") as f:
         f.write("\n".join(new_lines) + "\n\n")
-    
+            

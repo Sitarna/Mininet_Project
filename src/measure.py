@@ -182,18 +182,20 @@ def calculate_kpis_from_iperf3(host_name: str = 'UAV_1', folder_path: str = 'dat
 
 def get_kpi(duration: int = 60, host_name: str = 'UAV_1'):
     
-    while True:
-        print("Do you want to create a new folder? (y/n): ", end="")
-        answer = input().strip().lower()
+#    while True:
+#        print("Do you want to create a new folder? (y/n): ", end="")
+#        answer = input().strip().lower()
 
-        if answer in ('y', 'yes'):
-            folder_path = create_folder(1)
-            break
-        elif answer in ('n', 'no'):
-            folder_path = create_folder(0)
-            break
-        else:
-            print("Please write 'y' or 'n'.")
+#        if answer in ('y', 'yes'):
+#            folder_path = create_folder(1)
+#            break
+#        elif answer in ('n', 'no'):
+#            folder_path = create_folder(0)
+#            break
+#        else:
+#            print("Please write 'y' or 'n'.")
+    folder_path = create_folder(1)
+    print(f"created folder: {folder_path}")
             
    
     avg_latency, ping_loss = ping(duration, host_name, folder_path)

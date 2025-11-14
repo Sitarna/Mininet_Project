@@ -19,25 +19,35 @@ def run_scenario(scenario):
     hosts = scenario.get("hosts", [])
     repeat = scenario.get("repeat", 1)
     
+    print(f"Scenario repeat: {repeat}")
+    
     for i in range(repeat):
-        print(f"\n=== Running scenario '{scenario['scenario_name']}, iteration {i+1} ===n")
+        print(f"\n=== Running scenario '{scenario['scenario_name']}, iteration {i+1} ===\n")
         for step in scenario.get("templates", []):
             template = step['template']
             duration = step['duration']
             
-            print(f"\n[TEST] Applying template: {template} for {duration}s±n")
+            print(f"\n[TEST] Applying template: {template} for {duration}s\n")
             provision(template)
             
             for host in hosts:
                 print(f"[TEST] Measuring KPIs for {host}")
                 measure(duration, host)
+                #try:
+                report()
+                #except TypeError:
+                    #print(f"SOme kind of TypeError\n")
+                    
+        print("\n[TEST] All templates applied, fetching report...")
         
-        print("\n[TEST] All templates applied, fetchng report...")
-        report()
         teardown()
         print("\n[TEST] Scenario completed.\n")
     
 if __name__ == "__main__":
+    print("STARTING TEST SCRIPT")
     scenario_file = "scenario1.yaml"
+    print("LOADING SCENARIO")
     scenario = load_scenario(scenario_file)
+    print("RUNNING SCENARIO")
     run_scenario(scenario)
+    print("FINISHED")

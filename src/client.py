@@ -34,7 +34,7 @@ def provision(template: str):
     
     Path("current_template.txt").write_text(template)
 
-    time.sleep(1)
+    #time.sleep(1)
     print(f"[API] Link provisioned with template {template}")
     
     return 0

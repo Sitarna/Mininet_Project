@@ -21,8 +21,8 @@ import json
 import shlex
 import subprocess
 from pathlib import Path
-from measure import get_kpi, create_folder
-from measure import ping, run_iperf3, create_folder
+from .measure import get_kpi, create_folder
+from .measure import ping, run_iperf3, create_folder
 import time
 
 

@@ -1,0 +1,19 @@
+----- Raw ping output -----
+PING 10.0.0.1 (10.0.0.1) 56(84) bytes of data.
+64 bytes from 10.0.0.1: icmp_seq=1 ttl=64 time=62.3 ms
+64 bytes from 10.0.0.1: icmp_seq=2 ttl=64 time=62.7 ms
+
+--- 10.0.0.1 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1002ms
+rtt min/avg/max/mdev = 62.272/62.502/62.733/0.230 ms
+
+----- Parsed KPI values -----
+packets transmitted = 2
+packets received = 2
+packet loss = 0
+time = 1002ms
+fastest packet = 62.272 ms
+average latency = 62.502 ms
+slowest packet = 62.733 ms
+  ping jitter = 0.230 ms
+

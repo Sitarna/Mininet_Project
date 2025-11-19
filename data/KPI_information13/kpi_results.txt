@@ -1,0 +1,9 @@
+=========   KPI MEASUREMENTS UAV_1  ==========
+packets transmitted = 2
+packets received = 0
+packet loss = 100
+time = 1020ms
+Goodput: 0.00 Mbps
+Packets per second: 0.00 pps
+UDP Jitter: 0 ms
+

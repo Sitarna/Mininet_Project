@@ -21,7 +21,11 @@ topology:
 	xterm -hold -e "sudo -E python3 src/topology.py" &
 
 # Run controller, topolog
-run: controller topology
+run:
+	$(MAKE) controller
+	sleep 10
+	$(MAKE) topology
+
 
 kill:
 	killall xterm

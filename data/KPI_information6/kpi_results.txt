@@ -1,0 +1,29 @@
+=========   KPI MEASUREMENTS UAV_1  ==========
+packets transmitted = 60
+packets received = 60
+packet loss = 0
+time = 59091ms
+fastest packet = 12.170 ms
+average latency = 12.558 ms
+slowest packet = 17.473 ms
+  ping jitter = 0.689 ms
+Goodput: 0.12 Mbps
+Packets per second: 28.90 pps
+UDP Jitter: 2.9530562645890526 ms
+
+========= KPI SUMMARY =========
+QoS Template: X 
+
+From PING: 
+Average latency: 12.56 ms
+Ping packet loss: 0.00% 
+
+From IPERF3 (UDP stream):
+Goodput: 0.12 Mbps
+UDP Jitter: 2.95 ms
+UDP Packet Loss: 0.00%
+SLA compliance: Does NOT comply with your SLA rules 
+
+Your target: latency <= 100 ms, jitter <= 30 ms, loss <= 0.5%, goodput >= 0.128 Mbps
+Your result:  latency=12.56 ms, jitter=2.95 ms, loss=0.00%, goodput=0.12 Mbps
+

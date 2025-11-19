@@ -1,0 +1,10 @@
+{
+    "start": {
+        "connected": [],
+        "version": "iperf 3.7",
+        "system_info": "Linux mininet-vm 5.4.0-216-generic #236-Ubuntu SMP Fri Apr 11 19:53:21 UTC 2025 x86_64"
+    },
+    "intervals": [],
+    "end": {},
+    "error": "error - unable to connect to server: Connection timed out"
+}

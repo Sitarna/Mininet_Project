@@ -1,0 +1,13 @@
+----- Raw ping output -----
+PING 10.0.0.254 (10.0.0.254) 56(84) bytes of data.
+
+--- 10.0.0.254 ping statistics ---
+2 packets transmitted, 0 received, 100% packet loss, time 1020ms
+
+
+----- Parsed KPI values -----
+packets transmitted = 2
+packets received = 0
+packet loss = 100
+time = 1020ms
+

@@ -40,7 +40,7 @@ def ping(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 'data'
     new_lines.append(f"=========   KPI MEASUREMENTS {host_name}  ==========")
         
     # ping gcs with ip 10.0.0.1
-    cmd = ["ping", "-c", str(duration), "10.0.0.1"]
+    cmd = ["ping", "-c", str(duration), "10.0.0.254"]
     result = subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
 
     # Add full ping output to all_output
@@ -114,15 +114,18 @@ def run_iperf3(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 
 
     # Set bandwidth based on template
     if template == "X":
-        bw = "128k"   # 128 kbps 
+        bw = "128k"   # 128 kbps
+        pkt_len = "100"
     elif template == "Y":
         bw = "4M"     # 4 Mbps
+        pkt_len = "512"
     else:
         bw = "1M"
+        pkt_len = "512"
     try:
         # Run iperf3 client command
-        result = subprocess.run(["iperf3", "-c", "10.0.0.1", "-u", "-b", bw, "-t", str(duration),
-        "-i", "1", "-p", "5201", "--len=512", "-J"], capture_output=True, text=True, check=False)
+        result = subprocess.run(["iperf3", "-c", "10.0.0.254", "-u", "-b", bw, "-t", str(duration),
+        "-i", "1", "-p", "5201", "--len", pkt_len, "-J"], capture_output=True, text=True, check=False)
 
         if result.stdout.strip() == "":
             print("iperf3 returned no output!")
@@ -199,13 +202,15 @@ def get_kpi(duration: int = 60, host_name: str = 'UAV_1'):
     avg_latency, ping_loss = ping(duration, host_name, folder_path)
     path = run_iperf3(duration, host_name, folder_path)
     goodput, pps, udp_jitter = calculate_kpis_from_iperf3(host_name, folder_path, path)
-    template = Path("current_template.txt").read_text().strip()
+    template = Path("template.txt").read_text().strip()
     
      # --- Define SLA targets for templates ---
-    SLA_TARGETS = {
-        "X": {"latency_ms": 100, "udp_jitter_ms": 30, "packet_loss_pct": 0.5, "goodput_mbps": 0.128},
-        "Y": {"latency_ms": 150, "udp_jitter_ms": 50, "packet_loss_pct": 1.0, "goodput_mbps": 2.0}
-    }[template]
+    if(template == "X"):
+         SLA_TARGETS = {"latency_ms": 100, "udp_jitter_ms": 30, "packet_loss_pct": 0.5, "goodput_mbps": 0.128}
+    elif(template == "Y"):   
+         SLA_TARGETS = {"latency_ms": 150, "udp_jitter_ms": 50, "packet_loss_pct": 1.0, "goodput_mbps": 2.0}
+    else:
+        print("cant find template")
     
     # UDP packet loss from iperf3
     with open(path, "r") as f:

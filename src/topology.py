@@ -8,16 +8,20 @@
 # - sudo -E mn --custom topology.py --topo network_from_truck --controller=remote,ip=127.0.0.1,port=6653  --switch=ovs,protocols=OpenFlow13 
 #
 #
+from mininet.node import Node
 from mininet.topo import Topo
+from mininet.node import Intf
 from mininet.net import Mininet
 from mininet.node import RemoteController, OVSSwitch
 from mininet.link import TCLink
 from mininet.cli import CLI
 import sys
+import subprocess 
   
 class network_from_truck(Topo):
     def build(self, template='X'):
         # Hosts
+        #gcs = self.addHost('gcs', ip='10.0.0.254/24')
         gcs = self.addHost('gcs', ip='10.0.0.1/24')
         uav_1 = self.addHost('UAV_1', ip='10.0.0.2/24')
         uav_2 = self.addHost('UAV_2', ip='10.0.0.3/24')
@@ -50,7 +54,7 @@ class network_from_truck(Topo):
             loss = 1
         else:
             raise ValueError("Unknown template. Use 'X' or 'Y'.")
-
+        # max_queue_size = 1000
         # Links
         self.addLink(uav_1,    uav_sw_1, cls=TCLink, bw=bw, delay=delay, loss=loss)
         self.addLink(uav_sw_1, gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss)
@@ -68,7 +72,49 @@ class network_from_truck(Topo):
         self.addLink(uav_sw_5, gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss)
                 
         self.addLink(gcs,    gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss)
-        
+ 
+def setup_veth(vm_if='veth_vm', mn_if='veth_mn', vm_ip='10.0.0.254/24', mn_node=None):
+    
+    import subprocess
+    import shlex
+    from time import sleep
+
+    # Clean up any existing interfaces (both sides)
+    subprocess.call(f"ip link show {vm_if} >/dev/null 2>&1 && ip link del {vm_if} || true", shell=True)
+    subprocess.call(f"ip link show {mn_if} >/dev/null 2>&1 && ip link del {mn_if} || true", shell=True)
+
+    # Create veth pair
+    subprocess.check_call(shlex.split(f"ip link add {vm_if} type veth peer name {mn_if}"))
+
+    # Bring both interfaces up on host namespace
+    subprocess.check_call(shlex.split(f"ip link set {vm_if} up"))
+    subprocess.check_call(shlex.split(f"ip link set {mn_if} up"))
+
+    # If a Mininet switch object is provided, attach mn_if to its bridge explicitly
+    if mn_node:
+        # mn_node.name is the bridge name that OVS created for that switch
+        bridge = mn_node.name
+        # Add port to bridge (idempotent due to --may-exist)
+        subprocess.check_call(shlex.split(f"ovs-vsctl --may-exist add-port {bridge} {mn_if}"))
+
+        # Wait a tiny bit for OVS to register the port
+        sleep(0.1)
+
+    # Configure VM-side IP
+    subprocess.check_call(shlex.split(f"ip addr flush dev {vm_if}"))
+    subprocess.check_call(shlex.split(f"ip addr add {vm_ip} dev {vm_if}"))
+    subprocess.check_call(shlex.split(f"ip link set {vm_if} up"))
+
+    # Ensure the interface is present in OVS (simple check)
+    try:
+        out = subprocess.check_output(shlex.split("ovs-vsctl show")).decode()
+    except subprocess.CalledProcessError:
+        out = ""
+    if mn_if not in out:
+        # Last ditch: try to re-add
+        subprocess.check_call(shlex.split(f"ovs-vsctl --may-exist add-port {mn_node.name} {mn_if}"))
+
+
 def main(template='X'):
     topo=network_from_truck(template=template)
     net = Mininet(
@@ -80,6 +126,21 @@ def main(template='X'):
 
     net.start()
 
+    # Retrieve switch and host objects
+    gcs_sw = net.get('gcs_sw')
+    gcs_host = net.get('gcs')
+
+    # Setup VM <-> Mininet veth
+    setup_veth(vm_if='veth_vm', mn_if='veth_mn', vm_ip='10.0.0.254/24', mn_node=gcs_sw)
+
+    # --- Map UAV hosts to PX4 SITL UDP ports ---
+    uav_ports = [14551, 14552, 14553, 14554, 14555]
+    for i, uav in enumerate([net.get(f'UAV_{i+1}') for i in range(5)]):
+        print(f"{uav.name} IP: {uav.IP()} -> PX4 UDP port {uav_ports[i]}")
+        print(f"Example MAVLink command: UDP {uav_ports[i]} -> {uav.IP()}")
+
+    print(f"GCS Mininet IP: {gcs_host.IP()} -> VM PX4 at 10.0.0.254")
+  
     print(f"\n=== Topology started with template {template} ===")
     gcs_host = net.get('gcs')
     print(f"GCS IP: {gcs_host.IP()}")
@@ -88,8 +149,7 @@ def main(template='X'):
         print(f"UAV {i} IP: {uav_host.IP()}")
         net.ping([gcs_host, uav_host])
     
-  #  print("Starting iperf3 server on GCS...")
-   # gcs_host.cmd('gcs xterm -hold -e "iperf3 -s -J -p 5201" &')
+    
     CLI(net)
     net.stop()
 

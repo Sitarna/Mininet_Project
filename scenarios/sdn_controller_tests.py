@@ -45,7 +45,11 @@ def run_scenario(scenario):
     
 if __name__ == "__main__":
     print("STARTING TEST SCRIPT")
-    scenario_file = "scenario1.yaml"
+    if len(sys.argv) > 1:
+        scenario_file = sys.argv[1]
+    else:
+        print("No scenario file specified.")
+        sys.exit(1)
     print("LOADING SCENARIO")
     scenario = load_scenario(scenario_file)
     print("RUNNING SCENARIO")

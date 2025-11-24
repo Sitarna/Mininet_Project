@@ -5,6 +5,10 @@ import time
 import sys
 import os
 from pathlib import Path
+from scapy.all import rdpcap, UDP
+import numpy as np
+from collections import defaultdict
+from pymavlink import mavutil
 
 
 def create_folder(c: int = 2):
@@ -124,7 +128,7 @@ def run_iperf3(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 
         pkt_len = "512"
     try:
         # Run iperf3 client command
-        result = subprocess.run(["iperf3", "-c", "10.0.0.254", "-u", "-b", bw, "-t", str(duration),
+        result = subprocess.run(["iperf3", "-c", "10.0.0.1", "-u", "-b", bw, "-t", str(duration),
         "-i", "1", "-p", "5201", "--len", pkt_len, "-J"], capture_output=True, text=True, check=False)
 
         if result.stdout.strip() == "":
@@ -183,6 +187,30 @@ def calculate_kpis_from_iperf3(host_name: str = 'UAV_1', folder_path: str = 'dat
         
     return goodput, pps, udp_jitter
 
+
+
+def mavlink_jitter(folder_path: str = 'data'):
+    pcap_file="mavlink.pcap"
+    packets = rdpcap(pcap_file)
+    times = [pkt.time for pkt in packets]
+    diffs = np.diff(times)
+
+    avg_interval = np.mean(diffs) 
+    jitter = np.std(diffs)
+
+    new_lines = []
+    new_lines.append(f"\n \n -------- MAVLINK from PX4--------------")
+    new_lines.append(f"MAVLink avg interval: {avg_interval:.6f} s \n")
+    new_lines.append(f"MAVLink jitter: {jitter:.6f} s\n")
+    new_lines.append(f"MAVLink packet count: {len(packets)}\n\n")
+    
+    # Save KPI results
+    kpi_file = folder_path / "kpi_results.txt"
+    with kpi_file.open("a") as f:
+        f.write("\n".join(new_lines) + "\n\n")
+
+    return avg_interval, jitter, len(packets)
+
 def get_kpi(duration: int = 60, host_name: str = 'UAV_1'):
     
     while True:
@@ -202,6 +230,7 @@ def get_kpi(duration: int = 60, host_name: str = 'UAV_1'):
     avg_latency, ping_loss = ping(duration, host_name, folder_path)
     path = run_iperf3(duration, host_name, folder_path)
     goodput, pps, udp_jitter = calculate_kpis_from_iperf3(host_name, folder_path, path)
+    mav_interval, mav_jitter, mav_packeges = mavlink_jitter(folder_path)
     template = Path("template.txt").read_text().strip()
     
      # --- Define SLA targets for templates ---

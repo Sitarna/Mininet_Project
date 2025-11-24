@@ -1,9 +1,0 @@
-=========   KPI MEASUREMENTS UAV_1  ==========
-packets transmitted = 60
-packets received = 60
-packet loss = 0
-time = 59095ms
-fastest packet = 12.124 ms
-average latency = 12.485 ms
-slowest packet = 17.313 ms
-  ping jitter = 0.647 ms

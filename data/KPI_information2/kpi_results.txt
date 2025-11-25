@@ -1,0 +1,49 @@
+=========   KPI MEASUREMENTS UAV_1  ==========
+packets transmitted = 60
+packets received = 60
+packet loss = 0
+time = 59008ms
+fastest packet = 9.050 ms
+average latency = 13.781 ms
+slowest packet = 16.114 ms
+  ping jitter = 2.222 ms
+Goodput: 0.75 Mbps
+Packets per second: 183.13 pps
+UDP Jitter: 24.152106509557637 ms
+
+
+
+========= MAVLink KPI RESULTS =========
+
+Total packets: 13905
+Lost packets: 0
+Packet loss: 0.00%
+Total bandwidth: 1.75 kbps
+Average interval: 0.146058 s
+Overall jitter: 0.202422 s
+
+
+---- Message Rates (Hz) ----
+MSG 1: 5.72 Hz
+MSG 190: 1.14 Hz
+
+---- Message Jitter (s) ----
+MSG 1: 0.261756 s
+MSG 190: 0.287714 s
+
+ ========= KPI SUMMARY =========
+QoS Template: X 
+
+From PING: 
+Average latency: 13.78 ms
+Ping packet loss: 0.00% 
+
+From IPERF3 (UDP stream):
+Goodput: 0.75 Mbps
+UDP Jitter: 24.15 ms
+UDP Packet Loss: 87.69%
+SLA compliance: Does NOT comply with your SLA rules 
+
+Your target: latency <= 100 ms, jitter <= 30 ms, loss <= 0.5%, goodput >= 0.128 Mbps
+Your result:  latency=13.78 ms, jitter=24.15 ms, loss=87.69%, goodput=0.75 Mbps
+

@@ -67,7 +67,7 @@ def teardown():
 
 def main():
 #   in terminal:
-#   UAV_1 python3 src/client.py provision
+#   UAV_1 python3 src/client.py provision X
 #   UAV_1 python3 src/client.py measure 2 "UAV_1"
 #   UAV_1 python3 src/client.py report
 #   UAV_1 python3 src/client.py teardown
@@ -93,9 +93,5 @@ def main():
         print("ERROR")
         print("you have to write: host python3 client.py [provision|measure|report|teardown] [args] [host]")
         
-    
-        
-
-
 if __name__ == "__main__":
     main()

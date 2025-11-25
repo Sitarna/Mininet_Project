@@ -16,12 +16,13 @@ from mininet.node import RemoteController, OVSSwitch
 from mininet.link import TCLink
 from mininet.cli import CLI
 import sys
-import subprocess 
+import subprocess
+import shlex
+from time import sleep
   
 class network_from_truck(Topo):
     def build(self, template='X'):
         # Hosts
-        #gcs = self.addHost('gcs', ip='10.0.0.254/24')
         gcs = self.addHost('gcs', ip='10.0.0.1/24')
         uav_1 = self.addHost('UAV_1', ip='10.0.0.2/24')
         uav_2 = self.addHost('UAV_2', ip='10.0.0.3/24')
@@ -74,10 +75,6 @@ class network_from_truck(Topo):
         self.addLink(gcs,    gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss)
  
 def setup_veth(vm_if='veth_vm', mn_if='veth_mn', vm_ip='10.0.0.254/24', mn_node=None):
-    
-    import subprocess
-    import shlex
-    from time import sleep
 
     # Clean up any existing interfaces (both sides)
     subprocess.call(f"ip link show {vm_if} >/dev/null 2>&1 && ip link del {vm_if} || true", shell=True)
@@ -131,15 +128,9 @@ def main(template='X'):
     gcs_host = net.get('gcs')
 
     # Setup VM <-> Mininet veth
+    #To be able to reach groundcontroll from mininet
     setup_veth(vm_if='veth_vm', mn_if='veth_mn', vm_ip='10.0.0.254/24', mn_node=gcs_sw)
 
-    # --- Map UAV hosts to PX4 SITL UDP ports ---
-    uav_ports = [14551, 14552, 14553, 14554, 14555]
-    for i, uav in enumerate([net.get(f'UAV_{i+1}') for i in range(5)]):
-        print(f"{uav.name} IP: {uav.IP()} -> PX4 UDP port {uav_ports[i]}")
-        print(f"Example MAVLink command: UDP {uav_ports[i]} -> {uav.IP()}")
-
-    print(f"GCS Mininet IP: {gcs_host.IP()} -> VM PX4 at 10.0.0.254")
   
     print(f"\n=== Topology started with template {template} ===")
     gcs_host = net.get('gcs')

@@ -8,8 +8,6 @@ from pathlib import Path
 from scapy.all import rdpcap, UDP
 import numpy as np
 from collections import defaultdict
-from pymavlink import mavutil
-
 
 def create_folder(c: int = 2):
     #create data if data does not exist
@@ -173,8 +171,6 @@ def calculate_kpis_from_iperf3(host_name: str = 'UAV_1', folder_path: str = 'dat
     goodput = (total_bytes * 8) / total_seconds / 1_000_000  # To create Mbps
     pps = total_packets / total_seconds
     
-
-
     new_lines = []
     new_lines.append(f"\nGoodput: {goodput:.2f} Mbps")
     new_lines.append(f"Packets per second: {pps:.2f} pps")
@@ -187,29 +183,108 @@ def calculate_kpis_from_iperf3(host_name: str = 'UAV_1', folder_path: str = 'dat
         
     return goodput, pps, udp_jitter
 
+def analyze_mavlink(folder_path: str = 'data'):
+    pcap_file = 'MAVLink/mavlink.pcap'
 
-
-def mavlink_jitter(folder_path: str = 'data'):
-    pcap_file="mavlink.pcap"
+    # Read packets
     packets = rdpcap(pcap_file)
-    times = [pkt.time for pkt in packets]
-    diffs = np.diff(times)
+    mav_packets = []
 
-    avg_interval = np.mean(diffs) 
-    jitter = np.std(diffs)
+    for pkt in packets:
 
-    new_lines = []
-    new_lines.append(f"\n \n -------- MAVLINK from PX4--------------")
-    new_lines.append(f"MAVLink avg interval: {avg_interval:.6f} s \n")
-    new_lines.append(f"MAVLink jitter: {jitter:.6f} s\n")
-    new_lines.append(f"MAVLink packet count: {len(packets)}\n\n")
+        # Only accept UDP packets (MAVLink runs on UDP)
+        if UDP not in pkt:
+            continue
+
+        payload = bytes(pkt[UDP].payload)
+
+        # MAVLink v1/v2 frames must be >= 6 bytes
+        if len(payload) < 6:
+            continue
+
+        # MAVLink v1: 0xFE   MAVLink v2: 0xFD
+        if payload[0] not in (0xFE, 0xFD):
+            continue
+
+        ts = float(pkt.time)
+        seq = payload[2]
+
+        # Extract message ID
+        msgid = payload[5] if payload[0] == 0xFE else payload[6]
+
+        mav_packets.append((ts, seq, msgid, payload))
+
+    if not mav_packets:
+        print("No valid MAVLink packets found")
+        return None
+
+    # Loss calculation
+    last_seq = None
+    lost = 0
+    total = len(mav_packets)
+
+    for ts, seq, msgid, payload in mav_packets:
+        if last_seq is not None:
+            diff = (seq - last_seq) % 256
+            if diff > 1:
+                lost += diff - 1
+        else:
+            last_seq = seq
+
+    loss_rate = (lost / total) * 100 if total else 0
+
+    # Per-message timing
+    times_by_msg = defaultdict(list)
+    for ts, seq, msgid, payload in mav_packets:
+        times_by_msg[msgid].append(ts)
+
+    rates_hz = {}
+    jitter_s = {}
+    for msgid, t in times_by_msg.items():
+        if len(t) >= 2:
+            diffs = np.diff(t)
+            rates_hz[msgid] = 1 / np.mean(diffs)
+            jitter_s[msgid] = float(np.std(diffs))
+
+    # Bandwidth (kbps)
+    total_bytes = sum(len(payload) for ts, seq, msgid, payload in mav_packets)
+    duration = mav_packets[-1][0] - mav_packets[0][0]
     
-    # Save KPI results
+    if duration > 0:
+        bandwidth_kbps = (total_bytes * 8 / 1000) / duration 
+    else:
+        bandwidth_kbps = 0
+
+    # General MAVLink timing
+    all_times = [ts for ts, seq, msgid, payload in mav_packets]
+    diffs_all = np.diff(all_times)
+    avg_interval = np.mean(diffs_all)
+    overall_jitter = np.std(diffs_all)
+
+    # Save results
+    new_lines = []
+    new_lines.append("\n\n========= MAVLink KPI RESULTS =========\n")
+    new_lines.append(f"Total packets: {total}")
+    new_lines.append(f"Lost packets: {lost}")
+    new_lines.append(f"Packet loss: {loss_rate:.2f}%")
+    new_lines.append(f"Total bandwidth: {bandwidth_kbps:.2f} kbps")
+    new_lines.append(f"Average interval: {avg_interval:.6f} s")
+    new_lines.append(f"Overall jitter: {overall_jitter:.6f} s\n")
+
     kpi_file = folder_path / "kpi_results.txt"
     with kpi_file.open("a") as f:
         f.write("\n".join(new_lines) + "\n\n")
 
-    return avg_interval, jitter, len(packets)
+        f.write("---- Message Rates (Hz) ----\n")
+        for msgid, rate in rates_hz.items():
+            f.write(f"MSG {msgid}: {rate:.2f} Hz\n")
+
+        f.write("\n---- Message Jitter (s) ----\n")
+        for msgid, j in jitter_s.items():
+            f.write(f"MSG {msgid}: {j:.6f} s\n")
+
+    return total, lost, loss_rate, bandwidth_kbps, avg_interval, overall_jitter, rates_hz, jitter_s
+
 
 def get_kpi(duration: int = 60, host_name: str = 'UAV_1'):
     
@@ -225,15 +300,14 @@ def get_kpi(duration: int = 60, host_name: str = 'UAV_1'):
             break
         else:
             print("Please write 'y' or 'n'.")
-            
    
     avg_latency, ping_loss = ping(duration, host_name, folder_path)
     path = run_iperf3(duration, host_name, folder_path)
     goodput, pps, udp_jitter = calculate_kpis_from_iperf3(host_name, folder_path, path)
-    mav_interval, mav_jitter, mav_packeges = mavlink_jitter(folder_path)
+    analyze_mavlink(folder_path)
     template = Path("template.txt").read_text().strip()
-    
-     # --- Define SLA targets for templates ---
+     
+    # --- Define SLA targets for templates ---
     if(template == "X"):
          SLA_TARGETS = {"latency_ms": 100, "udp_jitter_ms": 30, "packet_loss_pct": 0.5, "goodput_mbps": 0.128}
     elif(template == "Y"):   
@@ -257,7 +331,7 @@ def get_kpi(duration: int = 60, host_name: str = 'UAV_1'):
 
     #Write KPI Summary
     new_lines = []
-    new_lines.append("========= KPI SUMMARY =========")
+    new_lines.append("\n ========= KPI SUMMARY =========")
     new_lines.append(f"QoS Template: {template} \n")
     new_lines.append(f"From PING: ")
     new_lines.append(f"Average latency: {avg_latency:.2f} ms")

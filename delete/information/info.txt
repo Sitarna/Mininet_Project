@@ -1,4 +1,0 @@
-Start mininet: sudo -E mn
-Start mininet wifi: sudo -E mn --wifi
-Start xterm: xterm -E xclock
-Start GUI-version of mininet wifi: sudo -E  python examples/miniedit.py

@@ -8,7 +8,8 @@ from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
-from ryu.lib.packet import packet, ethernet, ether_types, ipv4, arp
+from ryu.lib.packet import packet, ipv4, arp
+from ryu.lib.packet import ethernet, ether_types
 from ryu.lib.mac import haddr_to_bin
 from threading import Thread
 
@@ -23,6 +24,12 @@ class LearningSwitch(app_manager.RyuApp):
             super(LearningSwitch, self).__init__(*args, **kwargs)
             self.mac_to_port = {}
             
+            # VM-facing interface
+            self.vm_ip = "10.0.0.254"
+            self.vm_mac = None          # will be learned dynamically from ARP
+            self.vm_registered = False  # becomes True when we detect veth_mn on switch
+
+    
             #Prioritites for later. Think that priority 1 is a rescue/search, prio 2 is an e.g surveillance
             #and prio 3 is a media drone
             self.drone_priority = {
@@ -33,7 +40,7 @@ class LearningSwitch(app_manager.RyuApp):
                 "10.0.0.6": 3
                 }
             self.meters_installed = {}
-            self.met_id_map = {}
+            self.meter_id_map = {}
             self.ip_to_host = {}
         
         #should be self explanatory
@@ -75,46 +82,94 @@ class LearningSwitch(app_manager.RyuApp):
 
         @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
         def switch_feature_handler(self, ev):
-            #Default rule, all unknown packages are sent to the controller
-            #Datapath represents a "switch"
             datapath = ev.msg.datapath
             ofproto = datapath.ofproto
             parser = datapath.ofproto_parser
-            
-            self.setup_meters(datapath)
 
+            # Table-miss flow
             match = parser.OFPMatch()
-        #THis catches all packages: Later its possible to use eg
-        #paerser.OFPMatch(in_port=1, eth_type=0x0800, ipv4_dst="10.0.0.2")
-
-            actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
-                                              ofproto.OFPCML_NO_BUFFER)]
-        
-            inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
-                                                 actions)]
-            mod = parser.OFPFlowMod(datapath=datapath, priority=0,
-                                    match=match, instructions=inst)
+            actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER, ofproto.OFPCML_NO_BUFFER)]
+            inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
+            mod = parser.OFPFlowMod(datapath=datapath, priority=0, match=match, instructions=inst)
             datapath.send_msg(mod)
+
             self.setup_meters(datapath)
-            
- 
+
+            # Request port descriptions to detect VM
+            req = parser.OFPPortDescStatsRequest(datapath, 0)
+            datapath.send_msg(req)
+        
+        @set_ev_cls(ofp_event.EventOFPPortDescStatsReply, MAIN_DISPATCHER)
+        def port_desc_stats_reply_handler(self, ev):
+            datapath = ev.msg.datapath
+           
+            for port in ev.msg.body:
+                # port.name is a bytes sometimes; cast to str for safety
+                try:
+                    pname = port.name.decode() if isinstance(port.name, bytes) else port.name
+                except Exception:
+                    pname = port.name
+                if pname == "veth_mn":
+                    self.logger.info("Detected VM link on switch %s, port %s", datapath.id, port.port_no)
+                    # Store mapping; MAC may be unknown yet so store placeholder
+                    stored_mac = self.vm_mac if self.vm_mac else None
+                    self.ip_to_host[self.vm_ip] = (stored_mac, datapath.id, port.port_no)
+                    if stored_mac:
+                        self.mac_to_port.setdefault(datapath.id, {})[stored_mac] = port.port_no
+                    self.vm_registered = True
+        
         def provision_async(self, template):
             def worker():
-                result = provision(template)
-                #self.logger.info("Provision finished with code: %s, template: %s", result, template)
+                try:
+                    result = provision(template)
+                    self.logger.debug("Provision finished with code: %s, template: %s", result, template)
+                except Exception as e:
+                    self.logger.exception("Provision error: %s", e)
             t = Thread(target=worker)
             t.daemon = True
             t.start()
-        
+          
+        def install_vm_flow(self, datapath):
+            if self.vm_mac and self.vm_ip in self.ip_to_host:
+                ofproto = datapath.ofproto
+                parser = datapath.ofproto_parser
+                vm_port = self.ip_to_host[self.vm_ip][2]
+
+                match = parser.OFPMatch(
+                    eth_type=0x0800,
+                    ipv4_dst=self.vm_ip,
+                    ip_proto=17  # UDP
+                )
+                actions = [parser.OFPActionOutput(vm_port)]
+                inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
+                flow_mod = parser.OFPFlowMod(datapath=datapath,
+                                             priority=100,
+                                             match=match,
+                                             instructions=inst)
+                datapath.send_msg(flow_mod)
+                self.logger.info("Installed dedicated flow for VM %s at port %s", self.vm_ip, vm_port)
+
         def handle_arp(self, datapath, in_port, eth, arp_pkt, msg):
             parser = datapath.ofproto_parser
             ofproto = datapath.ofproto
             
+        
             self.ip_to_host[arp_pkt.src_ip] = (arp_pkt.src_mac, datapath.id, in_port)
             self.mac_to_port.setdefault(datapath.id, {})[arp_pkt.src_mac] = in_port
+
+            if arp_pkt.src_ip == self.vm_ip:
+                if self.vm_mac != arp_pkt.src_mac:
+                    self.logger.info(f"Auto-learning VM MAC: {arp_pkt.src_mac} (was: {self.vm_mac})")
+                self.vm_mac = arp_pkt.src_mac
+
+                self.ip_to_host[self.vm_ip] = (self.vm_mac, datapath.id, in_port)
+                self.mac_to_port.setdefault(datapath.id, {})[self.vm_mac] = in_port
+
+                self.install_vm_flow(datapath)
+            
             
             if arp_pkt.opcode == arp.ARP_REQUEST:
-                #self.logger.info("An arp package has appeared from switch %s", datapath.id)
+                self.logger.info("An arp package has appeared from switch %s", datapath.id)
                 tgt = arp_pkt.dst_ip
                 if tgt in self.ip_to_host:
                     tgt_mac, _, _ = self.ip_to_host[tgt]
@@ -136,7 +191,6 @@ class LearningSwitch(app_manager.RyuApp):
                                               data=p.data)
                     
                     datapath.send_msg(out)
-                    self.logger.info("✅ ARP reply sent: %s -> %s", tgt, arp_pkt.src_ip)
                     return True
                 return False
         
@@ -154,18 +208,15 @@ class LearningSwitch(app_manager.RyuApp):
             
          
             #Ignore LLDP packages
-            if eth is None or eth.ethertype == 0x88cc:
+            if eth.ethertype == 0x88cc or eth is None:
                 return
-                
+               
+            if eth is None or eth.ethertype == 0x88cc:
+               return
+   
             dst = eth.dst
             src = eth.src
             in_port = msg.match['in_port']
-            
-            arp_pkt = pkt.get_protocol(arp.arp)
-            if arp_pkt:
-                handled = self.handle_arp(datapath, in_port, eth, arp_pkt, msg)
-                if handled:
-                    return
             
             self.mac_to_port.setdefault(dpid, {})
             
@@ -174,7 +225,11 @@ class LearningSwitch(app_manager.RyuApp):
 
             self.mac_to_port[dpid][src] = in_port
             
-
+            arp_pkt = pkt.get_protocol(arp.arp)
+            if arp_pkt:
+                handled = self.handle_arp(datapath, in_port, eth, arp_pkt, msg)
+                if handled:
+                    return
                 
             if dst in self.mac_to_port[dpid]:
                 out_port = self.mac_to_port[dpid][dst]
@@ -182,7 +237,29 @@ class LearningSwitch(app_manager.RyuApp):
                 out_port = ofproto.OFPP_FLOOD
                 
             actions = [parser.OFPActionOutput(out_port)]
-            
+               
+            ip_pkt = pkt.get_protocol(ipv4.ipv4)
+            if ip_pkt and ip_pkt.dst == self.vm_ip:
+                # only forward if VM info is known
+                if self.vm_ip in self.ip_to_host and self.vm_mac:
+                    vm_mac = self.vm_mac
+                    vm_port = self.ip_to_host[self.vm_ip][2]
+                    actions = [parser.OFPActionOutput(vm_port)]
+
+                    match = parser.OFPMatch(
+                        eth_type=0x0800,
+                        ipv4_dst=self.vm_ip,
+                        ip_proto=17  # UDP
+                    )
+
+                    inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
+                    flow_mod = parser.OFPFlowMod(datapath=datapath, priority=50, match=match, instructions=inst)
+                    datapath.send_msg(flow_mod)
+            else:
+                # VM not known yet, just flood or drop
+                self.logger.info("VM not learned yet, flooding packet to discover VM")
+                actions = [parser.OFPActionOutput(ofproto.OFPP_FLOOD)]
+        
             if out_port != ofproto.OFPP_FLOOD: #and allow:
                 priority_level = self.get_priority(pkt)
                 template = f"priority_{priority_level}"
@@ -190,48 +267,25 @@ class LearningSwitch(app_manager.RyuApp):
 
                 meter_id = self.meter_id_map.get(priority_level, 3)                
                 
-                match_fwd = parser.OFPMatch(eth_dst=dst)
-                inst_fwd = [parser.OFPInstructionMeter(meter_id, ofproto.OFPIT_METER),
+                match = parser.OFPMatch(eth_dst=dst)
+                inst = [parser.OFPInstructionMeter(meter_id, ofproto.OFPIT_METER),
                         parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
                 
-#                if msg.buffer_id != ofproto.OFP_NO_BUFFER:
-#                    flow_mod = parser.OFPFlowMod(datapath=datapath,
-#                                              priority=10,
-#                                              match=match,
-#                                              instructions=inst,
-#                                              buffer_id=msg.buffer_id)
+                if msg.buffer_id != ofproto.OFP_NO_BUFFER:
+                    flow_mod = parser.OFPFlowMod(datapath=datapath,
+                                              priority=10,
+                                              match=match,
+                                              instructions=inst,
+                                              buffer_id=msg.buffer_id)
             
-#                else:
-#                    flow_mod = parser.OFPFlowMod(datapath=datapath,
-#                                              priority=10,
-#                                              match=match,
-#                                              instructions=inst)
-
-                flow_mod_fwd = parser.OFPFlowMod(datapath=datapath,
-                                                 priority=10,
-                                                 match=match_fwd,
-                                                 instructions=inst_fwd,
-                                                 buffer_id=msg.buffer_id if msg.buffer_id != ofproto.OFP_NO_BUFFER else ofproto.OFP_NO_BUFFER,
-                                                 idle_timeout=0,
-                                                 hard_timeout=0)
-                datapath.send_msg(flow_mod_fwd) #TODO One of the parameters wrong
+                else:
+                    flow_mod = parser.OFPFlowMod(datapath=datapath,
+                                              priority=10,
+                                              match=match,
+                                              instructions=inst)
                 
-                #Put in the reverse flow: dst ->src
-                match_rev = parser.OFPMatch(eth_src=dst, eth_dst=src)
-                inst_rev = [parser.OFPInstructionMeter(meter_id, ofproto.OFPIT_METER),
-                            parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
-                                                         [parser.OFPActionOutput(in_port)])]
-                
-                flow_mod_rev = parser.OFPFlowMod(datapath=datapath,
-                                                 priority=10,
-                                                 match=match_rev,
-                                                 instructions=inst_rev,
-                                                 idle_timeout=0,
-                                                 hard_timeout=0)
-                datapath.send_msg(flow_mod_rev)
-             
-             
-                    
+                datapath.send_msg(flow_mod)
+                      
             data = None if msg.buffer_id != ofproto.OFP_NO_BUFFER else msg.data
             packet_out = parser.OFPPacketOut(datapath=datapath,
                                              buffer_id=msg.buffer_id,

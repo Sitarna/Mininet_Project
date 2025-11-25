@@ -32,7 +32,7 @@ def provision(template: str):
     """Provision {"template":"X"} – create the Virtual QoS Link"""
     print(f"[API] Creating the Virtual QoS Link with template: {template}")
     
-    Path("current_template.txt").write_text(template)
+    Path("template.txt").write_text(template)
 
     #time.sleep(1)
     print(f"[API] Link provisioned with template {template}")
@@ -67,7 +67,7 @@ def teardown():
 
 def main():
 #   in terminal:
-#   UAV_1 python3 src/client.py provision
+#   UAV_1 python3 src/client.py provision X
 #   UAV_1 python3 src/client.py measure 2 "UAV_1"
 #   UAV_1 python3 src/client.py report
 #   UAV_1 python3 src/client.py teardown

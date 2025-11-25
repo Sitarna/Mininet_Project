@@ -186,7 +186,7 @@ def calculate_kpis_from_iperf3(host_name: str = 'UAV_1', folder_path: str = 'dat
     return goodput, pps, udp_jitter
 
 def analyze_mavlink(folder_path: str = 'data'):
-    pcap_file = 'mavlink.pcap'
+    pcap_file = 'MAVLink/mavlink.pcap'
 
     # Read packets
     packets = rdpcap(pcap_file)

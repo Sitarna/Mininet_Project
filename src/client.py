@@ -93,9 +93,5 @@ def main():
         print("ERROR")
         print("you have to write: host python3 client.py [provision|measure|report|teardown] [args] [host]")
         
-    
-        
-
-
 if __name__ == "__main__":
     main()

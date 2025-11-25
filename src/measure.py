@@ -112,7 +112,7 @@ def ping(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 'data'
 def run_iperf3(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 'data'):
     print("run_iperf3")
     # Read template
-    template = Path("current_template.txt").read_text().strip()
+    template = Path("../src/current_template.txt").read_text().strip()
 
     # Set bandwidth based on template
     print("Running the iperf with template {}".format(template))
@@ -310,7 +310,7 @@ def get_kpi(duration: int = 60, host_name: str = 'UAV_1'):
     path = run_iperf3(duration, host_name, folder_path)
     goodput, pps, udp_jitter = calculate_kpis_from_iperf3(host_name, folder_path, path)
     analyze_mavlink(folder_path)
-    template = Path("template.txt").read_text().strip()
+    template = Path("../src/current_template.txt").read_text().strip()
      
     # --- Define SLA targets for templates ---
     if(template == "X"):

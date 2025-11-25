@@ -173,6 +173,11 @@ class LearningSwitch(app_manager.RyuApp):
                 tgt = arp_pkt.dst_ip
                 if tgt in self.ip_to_host:
                     tgt_mac, _, _ = self.ip_to_host[tgt]
+                    
+                    if tgt_mac is None:
+                        self.logger.warning("Cannot send ARP reply: target unkown")
+                        return False
+                    
                     eth_rep = ethernet.ethernet(dst=eth.src, src=tgt_mac, ethertype=ether_types.ETH_TYPE_ARP)
                     arp_rep = arp.arp(opcode=arp.ARP_REPLY,
                                       src_mac=tgt_mac,
@@ -208,8 +213,8 @@ class LearningSwitch(app_manager.RyuApp):
             
          
             #Ignore LLDP packages
-            if eth.ethertype == 0x88cc or eth is None:
-                return
+            #if eth.ethertype == 0x88cc or eth is None:
+            #    return
                
             if eth is None or eth.ethertype == 0x88cc:
                return
@@ -263,7 +268,7 @@ class LearningSwitch(app_manager.RyuApp):
             if out_port != ofproto.OFPP_FLOOD: #and allow:
                 priority_level = self.get_priority(pkt)
                 template = f"priority_{priority_level}"
-                self.provision_async(template)
+                #self.provision_async(template)
 
                 meter_id = self.meter_id_map.get(priority_level, 3)                
                 

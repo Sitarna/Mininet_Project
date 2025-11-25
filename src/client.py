@@ -32,7 +32,7 @@ def provision(template: str):
     """Provision {"template":"X"} – create the Virtual QoS Link"""
     print(f"[API] Creating the Virtual QoS Link with template: {template}")
     
-    Path("template.txt").write_text(template)
+    Path("../src/current_template.txt").write_text(template)
 
     #time.sleep(1)
     print(f"[API] Link provisioned with template {template}")
@@ -61,7 +61,7 @@ def teardown():
     """Remove QoS rules."""
     
     print("[API] Tearing down QoS link...")
-    Path("current_template.txt").unlink(missing_ok=True)
+    Path("../src/current_template.txt").unlink(missing_ok=True)
     print("[API] Link removed.")
 
 

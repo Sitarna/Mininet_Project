@@ -113,6 +113,8 @@ def run_iperf3(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 
     template = Path("current_template.txt").read_text().strip()
 
     # Set bandwidth based on template
+    print("Running the iperf with template {}".format(template))
+    
     if template == "X":
         bw = "128k"   # 128 kbps 
     elif template == "Y":

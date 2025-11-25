@@ -9,7 +9,7 @@ hosts:
 gcs: gcs
 templates:
 - template: "X"
-  duration: 60
+  duration: 4
 #- template: "Y"
 #  duration: 60
-repeat: 1
+repeat: 10

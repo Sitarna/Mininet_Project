@@ -1,17 +1,47 @@
 
-[Terminal 1]  make run 
+[Terminal 1]  
+- Run in terminal: make run 
 
-* 2 terminals will be created, Terminal 2 - Mininet CLI and Terminal 3 - sdn_controller
+* 2 terminals will be created, Terminal 3 - Mininet CLI and Terminal 4 - sdn_controller
 
-[Terminal 2 - Mininet CLI] xterm gcs &
+[Terminal 2]  
+- Run in terminal: ./QGroundControl.AppImage
 
-* 1 terminal will be created,  Terminal 4 - Mininet CLI (gcs)
+* groundcontrol will run on terminal 2
 
-[Terminal 4 - Mininet CLI (gcs)] iperf3 -s -J -p 5201
+[Terminal 1]
+- Run in terminal:  sudo tcpdump -i gcs_sw-eth1 udp port 14550 -w MAVLink/mavlink.pcap
 
-<img width="1466" height="1077" alt="image" src="https://github.com/user-attachments/assets/e4d25a9c-6df4-4980-abb6-221195745d0a" />
+* Will capture UDP packeges between PX4 and groundcontrol
 
-* when you are done
+[Terminal 3 - Mininet CLI]                                               
+- Run in terminal: xterm UAV_1
+
+* 1 terminal will be created,  Terminal 5 - Mininet CLI (UAV_1)
+
+[Terminal 5 - Mininet CLI (UAV_1)]                       
+- Run in terminal: cd ~/PX4-Autopilot
+- Run in terminal: make px4_sitl gazebo-classic_typhoon_h480
+- Run in pxh>: mavlink stop-all
+- Run in pxh>: mavlink start -u 14550 -o 14550 -t 10.0.0.254 -m onboard
+
+[Terminal 3 - Mininet CLI]            
+- Run in terminal: xterm gcs
+
+* 1 terminal will be created,  Terminal 6 - Mininet CLI (gcs)
+
+[Terminal 5 - Mininet CLI (gcs)]
+- Run in terminal: Ctrl + c
+
+* kill px4
+
+- Run in terminal: cd scenario1
+- Run in terminal: python3 sdn_controller_tests.py
+
+[Terminal 5 - Mininet CLI (UAV_1)] 
+- Run in terminal:
+
+----when you are done----
    
 [Terminal 1 ] make kill
 

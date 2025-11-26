@@ -55,5 +55,29 @@
 
 ----when you are done----
    
-[Terminal 1 ] make kill
+[Terminal 1 ] 
+- Run in terminal: make kill
 
+
+How to run in only terminal without PX4:
+[Terminal 1]
+- Run in terminal: make run
+
+* 2 terminals will be created, Terminal 2 - Mininet CLI and Terminal 3 - sdn_controller
+
+[Terminal 2 - Mininet CLI]
+- Run in terminal: xterm gcs
+- Run in terminal: xterm UAV_1
+
+* 2 terminals will be created, Terminal 4 - Mininet CLI (gcs) and terminal 5 - Mininet CLI (UAV_1)
+
+[Terminal 4 - Mininet CLI (gcs)]
+- Run in terminal: iperf -s -J -p 5201
+
+[Terminal 5 - Mininet CLI (UAV_1)]
+- Run in terminal: cd scenarios
+- Run in terminal: python3 sdn_controller_tests.py [scenario_file.yaml]
+
+----when you are done----
+[Terminal 1 ]
+- Run in terminal: make kill

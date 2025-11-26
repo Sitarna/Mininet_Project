@@ -30,7 +30,7 @@
 
 * 1 terminal will be created,  Terminal 6 - Mininet CLI (gcs)
 
-[Terminal 5 - Mininet CLI (gcs)]
+[Terminal 5 - Mininet CLI (UAV_1)]
 - Run in terminal: Ctrl + c
 
 * kill px4
@@ -38,8 +38,8 @@
 - Run in terminal: cd scenario1
 - Run in terminal: python3 sdn_controller_tests.py
 
-[Terminal 5 - Mininet CLI (UAV_1)] 
-- Run in terminal:
+[Terminal 6 - Mininet CLI (gcs] 
+- Run in terminal: iperf3 -s -J -p 5201
 
 ----when you are done----
    

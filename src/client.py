@@ -18,10 +18,10 @@ def provision(template: str):
     
     return 0
 
-def measure(duration: int = 60, host_name: str = 'UAV_1'):
+def measure(duration: int = 60, host_name: str = 'UAV_1', scenario=None):
     """POST /measure {"duration":60} – run KPI collection."""
  
-    get_kpi(duration, host_name)
+    get_kpi(duration, host_name, scenario)
     
     print("[API] KPI measurement completed.")
 
@@ -44,7 +44,7 @@ def teardown():
 def main():
 #   in terminal:
 #   UAV_1 python3 src/client.py provision X
-#   UAV_1 python3 src/client.py measure 2 "UAV_1"
+#   UAV_1 python3 src/client.py measure 2 "UAV_1" True
 #   UAV_1 python3 src/client.py report
 #   UAV_1 python3 src/client.py teardown
 #
@@ -57,7 +57,8 @@ def main():
         elif cmd == "measure":
             duration = int(sys.argv[2]) if len(sys.argv) > 2 else 60
             host_name = sys.argv[3] if len(sys.argv) > 3 else "UAV_1"
-            measure(duration, host_name)
+            folder = sys.argv[4]
+            measure(duration, host_name, folder)
 
         elif cmd == "report":
             report()

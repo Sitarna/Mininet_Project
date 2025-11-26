@@ -20,7 +20,6 @@ def create_folder(c: int = 2):
             if c == 1:
                 # creates a new folder
                 folder_path.mkdir()
-                print(f"Created folder: {folder_path}")
                 return folder_path;
                     
             elif c == 0:
@@ -32,16 +31,16 @@ def create_folder(c: int = 2):
             i += 1  
     
 def ping(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 'data'):
-    
+    template = Path("../src/current_template.txt").read_text().strip()
     output_file = folder_path / f"{host_name}_ping.txt"   
     kpi_file = folder_path / "kpi_results.txt"
 
     print(f"ping")
     all_output = []  
     new_lines = []   
-    new_lines.append(f"=========   KPI MEASUREMENTS {host_name}  ==========")
-        
-    # ping gcs with ip 10.0.0.1
+    new_lines.append(f"=======  KPI MEASUREMENTS {host_name} with QoS Template: {template}  =======")
+
+    # ping gcs with ip 10.0.0.254
     cmd = ["ping", "-c", str(duration), "10.0.0.254"]
     result = subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
 
@@ -260,8 +259,8 @@ def analyze_mavlink(folder_path: str = 'data'):
     # General MAVLink timing
     all_times = [ts for ts, seq, msgid, payload in mav_packets]
     diffs_all = np.diff(all_times)
-    avg_interval = np.mean(diffs_all)
-    overall_jitter = np.std(diffs_all)
+    avg_interval = np.mean(diffs_all) * 1000  # convert to ms
+    overall_jitter = np.std(diffs_all) * 1000  # convert to ms
 
     # Save results
     new_lines = []
@@ -270,8 +269,8 @@ def analyze_mavlink(folder_path: str = 'data'):
     new_lines.append(f"Lost packets: {lost}")
     new_lines.append(f"Packet loss: {loss_rate:.2f}%")
     new_lines.append(f"Total bandwidth: {bandwidth_kbps:.2f} kbps")
-    new_lines.append(f"Average interval: {avg_interval:.6f} s")
-    new_lines.append(f"Overall jitter: {overall_jitter:.6f} s\n")
+    new_lines.append(f"Average interval: {avg_interval:.6f} ms")
+    new_lines.append(f"Overall jitter: {overall_jitter:.6f} ms\n")
 
     kpi_file = folder_path / "kpi_results.txt"
     with kpi_file.open("a") as f:
@@ -288,30 +287,28 @@ def analyze_mavlink(folder_path: str = 'data'):
     return total, lost, loss_rate, bandwidth_kbps, avg_interval, overall_jitter, rates_hz, jitter_s
 
 
-def get_kpi(duration: int = 60, host_name: str = 'UAV_1'):
+def get_kpi(duration: int = 60, host_name: str = 'UAV_1', folder:bool = True):
     
     while True:
-        print("Do you want to create a new folder? (y/n): ", end="")
-        answer = input().strip().lower()
-
-        if answer in ('y', 'yes'):
+        #answer = input("Do you want to create a new folder? (y/n): ").strip().lower()
+        answer = folder
+        if answer == True:
             folder_path = create_folder(1)
             break
-        elif answer in ('n', 'no'):
+        elif answer == False:
             folder_path = create_folder(0)
             break
         else:
-            print("Please write 'y' or 'n'.")
-    #folder_path = create_folder(1)
-    print(f"created folder: {folder_path}")
-            
+            print("Please write 'True' or 'False'.")
+
+    print(f"printing in folder: {folder_path}")
    
     avg_latency, ping_loss = ping(duration, host_name, folder_path)
     path = run_iperf3(duration, host_name, folder_path)
     goodput, pps, udp_jitter = calculate_kpis_from_iperf3(host_name, folder_path, path)
     analyze_mavlink(folder_path)
     template = Path("../src/current_template.txt").read_text().strip()
-     
+    
     # --- Define SLA targets for templates ---
     if(template == "X"):
          SLA_TARGETS = {"latency_ms": 100, "udp_jitter_ms": 30, "packet_loss_pct": 0.5, "goodput_mbps": 0.128}

@@ -26,13 +26,14 @@ def run_scenario(scenario):
         for step in scenario.get("templates", []):
             template = step['template']
             duration = step['duration']
+            folder = step['folder']
             
             print(f"\n[TEST] Applying template: {template} for {duration}s\n")
             provision(template)
             
             for host in hosts:
                 print(f"[TEST] Measuring KPIs for {host}")
-                measure(duration, host)
+                measure(duration, host, folder)
                 #try:
                 report()
                 #except TypeError:

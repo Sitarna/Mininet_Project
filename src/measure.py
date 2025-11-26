@@ -232,7 +232,11 @@ def analyze_mavlink(folder_path: str = 'data'):
         else:
             last_seq = seq
 
-    loss_rate = (lost / total) * 100 if total else 0
+    
+    if total > 0:
+        loss_rate = (lost / total) * 100
+    else:
+        loss_rate = 0
 
     # Per-message timing
     times_by_msg = defaultdict(list)

@@ -59,7 +59,10 @@
 - Run in terminal: make kill
 
 
-How to run in only terminal without PX4:
+
+
+**How to run in only terminal without PX4:**
+
 [Terminal 1]
 - Run in terminal: make run
 

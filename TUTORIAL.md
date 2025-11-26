@@ -36,8 +36,8 @@
 * kill px4
 
 - Run in terminal: cd scenario1
-- Run in terminal: python3 sdn_controller_tests.py
-
+* Run in terminal: python3 sdn_controller_tests.py scenario1.yaml
+* change <scenario1.yaml> to other senorio to try more senarios
 [Terminal 6 - Mininet CLI (gcs] 
 - Run in terminal: iperf3 -s -J -p 5201
 

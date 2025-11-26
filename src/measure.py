@@ -11,7 +11,7 @@ from collections import defaultdict
 
 def create_folder(c: int = 2):
     #create data if data does not exist
-    base_dir = Path("data")
+    base_dir = Path("/home/mininet/Mininet_Project/data")
     base_dir.mkdir(exist_ok=True)
     i = 1
     while True:
@@ -186,7 +186,7 @@ def calculate_kpis_from_iperf3(host_name: str = 'UAV_1', folder_path: str = 'dat
     return goodput, pps, udp_jitter
 
 def analyze_mavlink(folder_path: str = 'data'):
-    pcap_file = 'MAVLink/mavlink.pcap'
+    pcap_file = "/home/mininet/Mininet_Project/MAVLink/mavlink.pcap"
 
     # Read packets
     packets = rdpcap(pcap_file)
@@ -302,7 +302,7 @@ def get_kpi(duration: int = 60, host_name: str = 'UAV_1'):
             break
         else:
             print("Please write 'y' or 'n'.")
-    folder_path = create_folder(1)
+    #folder_path = create_folder(1)
     print(f"created folder: {folder_path}")
             
    

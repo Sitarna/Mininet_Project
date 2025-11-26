@@ -1,5 +1,0 @@
-=========   KPI MEASUREMENTS UAV_1  ==========
-packets transmitted = 60
-packets received = 0
-packet loss = 100
-time = 60393ms

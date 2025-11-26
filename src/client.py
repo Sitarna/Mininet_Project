@@ -1,21 +1,3 @@
-# install: sudo apt install iperf3 -y
-# mininet> xterm gcs &
-#
-#iperf3 -s -J -p 5201
-"""
-From Flavio:
-
-Measure – While active, the server runs lightweight tests and collects
-KPIs (RTT/latency, jitter p95, loss, goodput).
-Report / Teardown – KPIs are exposed via API (JSON/CSV).
-The link can be removed on request.
-
-- API (illustrative)
-- POST /provision {"template":"X"} – create the Virtual QoS Link.
-- POST /measure {"duration":60} – run KPI collection.
-- GET /report – fetch results.
-- POST /teardown – remove rules.
-"""
 import sys
 import json
 import shlex
@@ -25,9 +7,6 @@ from .measure import get_kpi, create_folder
 from .measure import ping, run_iperf3, create_folder
 import time
 
-
-# integrate with Ryu later
-# Everything in provison is temporary schould work with ryu
 def provision(template: str):
     """Provision {"template":"X"} – create the Virtual QoS Link"""
     print(f"[API] Creating the Virtual QoS Link with template: {template}")
@@ -38,7 +17,6 @@ def provision(template: str):
     print(f"[API] Link provisioned with template {template}")
     
     return 0
-
 
 def measure(duration: int = 60, host_name: str = 'UAV_1'):
     """POST /measure {"duration":60} – run KPI collection."""
@@ -56,14 +34,12 @@ def report():
     print("\n \n \n")
     print(data)
 
-# should be canged with ryu
 def teardown():
     """Remove QoS rules."""
     
     print("[API] Tearing down QoS link...")
     Path("../src/current_template.txt").unlink(missing_ok=True)
     print("[API] Link removed.")
-
 
 def main():
 #   in terminal:

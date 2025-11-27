@@ -74,9 +74,9 @@ class network_from_truck(Topo):
                 
         self.addLink(gcs,    gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss)
  
+# connect mininet and Vm 
 def setup_veth(vm_if='veth_vm', mn_if='veth_mn', vm_ip='10.0.0.254/24', mn_node=None):
 
-    # Clean up any existing interfaces (both sides)
     subprocess.call(f"ip link show {vm_if} >/dev/null 2>&1 && ip link del {vm_if} || true", shell=True)
     subprocess.call(f"ip link show {mn_if} >/dev/null 2>&1 && ip link del {mn_if} || true", shell=True)
 
@@ -91,10 +91,7 @@ def setup_veth(vm_if='veth_vm', mn_if='veth_mn', vm_ip='10.0.0.254/24', mn_node=
     if mn_node:
         # mn_node.name is the bridge name that OVS created for that switch
         bridge = mn_node.name
-        # Add port to bridge (idempotent due to --may-exist)
         subprocess.check_call(shlex.split(f"ovs-vsctl --may-exist add-port {bridge} {mn_if}"))
-
-        # Wait a tiny bit for OVS to register the port
         sleep(0.1)
 
     # Configure VM-side IP
@@ -102,13 +99,11 @@ def setup_veth(vm_if='veth_vm', mn_if='veth_mn', vm_ip='10.0.0.254/24', mn_node=
     subprocess.check_call(shlex.split(f"ip addr add {vm_ip} dev {vm_if}"))
     subprocess.check_call(shlex.split(f"ip link set {vm_if} up"))
 
-    # Ensure the interface is present in OVS (simple check)
     try:
         out = subprocess.check_output(shlex.split("ovs-vsctl show")).decode()
     except subprocess.CalledProcessError:
         out = ""
     if mn_if not in out:
-        # Last ditch: try to re-add
         subprocess.check_call(shlex.split(f"ovs-vsctl --may-exist add-port {mn_node.name} {mn_if}"))
 
 

@@ -48,8 +48,6 @@ def main():
 #   UAV_1 python3 src/client.py measure 2 "UAV_1" True
 #   UAV_1 python3 src/client.py report
 #   UAV_1 python3 src/client.py teardown
-#
-#
     if len(sys.argv) > 1:
         cmd = sys.argv[1]
         if cmd == "provision":

@@ -193,27 +193,32 @@ def analyze_mavlink(folder_path: str = 'data'):
 
     for pkt in packets:
 
-        # Only accept UDP packets (MAVLink runs on UDP)
+        # Only accept UDP packets
         if UDP not in pkt:
             continue
-
+        
         payload = bytes(pkt[UDP].payload)
 
-        # MAVLink v1/v2 frames must be >= 6 bytes
+        # MAVLink frames must be >= 6 bytes
         if len(payload) < 6:
             continue
 
-        # MAVLink v1: 0xFE   MAVLink v2: 0xFD
+        # MAVLink v1: 0xFE
+        # MAVLink v2: 0xFD
+        # If the first byte is not one of these the packet is not MAVLink.
+        
         if payload[0] not in (0xFE, 0xFD):
             continue
-
-        ts = float(pkt.time)
-        seq = payload[2]
+        
+        # Get the timestamp of when the packet was captured.
+        timestamp = float(pkt.time)
+        #Byte 2 is the sequence number.
+        sequence_number = payload[2]
 
         # Extract message ID
-        msgid = payload[5] if payload[0] == 0xFE else payload[6]
+        message_id = payload[5] if payload[0] == 0xFE else payload[6]
 
-        mav_packets.append((ts, seq, msgid, payload))
+        mav_packets.append((timestamp, sequence_number, message_id, payload))
 
     if not mav_packets:
         print("No valid MAVLink packets found")
@@ -224,13 +229,13 @@ def analyze_mavlink(folder_path: str = 'data'):
     lost = 0
     total = len(mav_packets)
 
-    for ts, seq, msgid, payload in mav_packets:
+    for timestamp, sequence_number, message_id, payload in mav_packets:
         if last_seq is not None:
-            diff = (seq - last_seq) % 256
+            diff = (sequence_number - last_seq) % 256
             if diff > 1:
                 lost += diff - 1
         else:
-            last_seq = seq
+            last_seq = sequence_number
 
     
     if total > 0:
@@ -240,19 +245,19 @@ def analyze_mavlink(folder_path: str = 'data'):
 
     # Per-message timing
     times_by_msg = defaultdict(list)
-    for ts, seq, msgid, payload in mav_packets:
-        times_by_msg[msgid].append(ts)
+    for timestamp, sequence_number, message_id, payload in mav_packets:
+        times_by_msg[message_id].append(timestamp)
 
     rates_hz = {}
     jitter_s = {}
-    for msgid, t in times_by_msg.items():
+    for message_id, t in times_by_msg.items():
         if len(t) >= 2:
             diffs = np.diff(t)
-            rates_hz[msgid] = 1 / np.mean(diffs)
-            jitter_s[msgid] = float(np.std(diffs))
+            rates_hz[message_id] = 1 / np.mean(diffs)
+            jitter_s[message_id] = float(np.std(diffs))
 
     # Bandwidth (kbps)
-    total_bytes = sum(len(payload) for ts, seq, msgid, payload in mav_packets)
+    total_bytes = sum(len(payload) for timestamp, sequence_number, message_id, payload in mav_packets)
     duration = mav_packets[-1][0] - mav_packets[0][0]
     
     if duration > 0:
@@ -261,7 +266,7 @@ def analyze_mavlink(folder_path: str = 'data'):
         bandwidth_kbps = 0
 
     # General MAVLink timing
-    all_times = [ts for ts, seq, msgid, payload in mav_packets]
+    all_times = [timestamp for timestamp, sequence_number, message_id, payload in mav_packets]
     diffs_all = np.diff(all_times)
     avg_interval = np.mean(diffs_all) * 1000  # convert to ms
     overall_jitter = np.std(diffs_all) * 1000  # convert to ms
@@ -281,12 +286,12 @@ def analyze_mavlink(folder_path: str = 'data'):
         f.write("\n".join(new_lines) + "\n\n")
 
         f.write("---- Message Rates (Hz) ----\n")
-        for msgid, rate in rates_hz.items():
-            f.write(f"MSG {msgid}: {rate:.2f} Hz\n")
+        for message_id, rate in rates_hz.items():
+            f.write(f"MSG {message_id}: {rate:.2f} Hz\n")
 
         f.write("\n---- Message Jitter (s) ----\n")
-        for msgid, j in jitter_s.items():
-            f.write(f"MSG {msgid}: {j:.6f} s\n")
+        for message_id, j in jitter_s.items():
+            f.write(f"MSG {message_id}: {j:.6f} s\n")
 
     return total, lost, loss_rate, bandwidth_kbps, avg_interval, overall_jitter, rates_hz, jitter_s
 

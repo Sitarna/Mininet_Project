@@ -58,8 +58,8 @@ class LearningSwitch(app_manager.RyuApp):
             parser = datapath.ofproto_parser
             
             #Just temporary rates depending on priority
-            #change rates later :D
-            rates = {1: 5000, 2: 3000, 3: 1000}
+            #change rates later if needed:D
+            rates = {1: 2000, 2: 1000, 3: 500}
             burst = 100
             
             self.meter_id_map = {1:1, 2:2, 3:3}

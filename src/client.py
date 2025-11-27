@@ -12,6 +12,7 @@ def provision(template: str):
     print(f"[API] Creating the Virtual QoS Link with template: {template}")
     
     Path("../src/current_template.txt").write_text(template)
+    
 
     #time.sleep(1)
     print(f"[API] Link provisioned with template {template}")

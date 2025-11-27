@@ -24,7 +24,9 @@ topology:
 topology_Y:
 	xterm -hold -e "sudo -E python3 src/topology.py Y" &
 # Run controller, topolog
-run: controller topology
+run: controller
+	sleep 10
+	$(MAKE) topology
 
 runY: controller topology_Y
 

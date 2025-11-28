@@ -20,8 +20,9 @@
 
 [Terminal 3 - Mininet CLI]                                               
 - Run in terminal: xterm UAV_1
+- Run in terminal: xterm UAV_1
 
-* 1 terminal will be created,  Terminal 5 - Mininet CLI (UAV_1)
+* 2 terminals will be created,  Terminal 5 - Mininet CLI (UAV_1), Terminal 6 - Mininet CLI (UAV_1)
 
 
 
@@ -36,21 +37,17 @@
 [Terminal 3 - Mininet CLI]            
 - Run in terminal: xterm gcs
 
-* 1 terminal will be created,  Terminal 6 - Mininet CLI (gcs)
+* 1 terminal will be created,  Terminal 7 - Mininet CLI (gcs)
 
 
 
-[Terminal 5 - Mininet CLI (UAV_1)]
-- Run in terminal: Ctrl + c
-
-* kill px4
-
+[Terminal 6 - Mininet CLI (UAV_1)]
 - Run in terminal: cd Mininet_Project/scenarios/
-* Run in terminal: python3 sdn_controller_tests.py scenario1.yaml
+- Run in terminal: python3 sdn_controller_tests.py scenario1.yaml
 * change <scenario1.yaml> to other senorio to try more senarios
 
 
-[Terminal 6 - Mininet CLI (gcs] 
+[Terminal 7 - Mininet CLI (gcs] 
 - Run in terminal: iperf3 -s -J -p 5201
 
 ----when you are done----

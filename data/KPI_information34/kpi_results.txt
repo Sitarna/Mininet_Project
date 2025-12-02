@@ -1,0 +1,98 @@
+=======  KPI MEASUREMENTS UAV_1 with QoS Template: X  =======
+packets transmitted = 15
+packets received = 15
+packet loss = 0
+time = 14021ms
+fastest packet = 8.196 ms
+average latency = 9.000 ms
+slowest packet = 10.033 ms
+  ping jitter = 0.522 ms
+Goodput: 0.10 Mbps
+Packets per second: 122.87 pps
+UDP Jitter: 2.5490511418564283 ms
+
+
+
+========= MAVLink KPI RESULTS =========
+
+Total packets: 13905
+Lost packets: 0
+Packet loss: 0.00%
+Total bandwidth: 1.75 kbps
+Average interval: 146.058487 ms
+Overall jitter: 202.422118 ms
+
+
+---- Message Rates (Hz) ----
+MSG 1: 5.72 Hz
+MSG 190: 1.14 Hz
+
+---- Message Jitter (s) ----
+MSG 1: 0.261756 s
+MSG 190: 0.287714 s
+
+ ========= KPI SUMMARY =========
+QoS Template: X 
+
+From PING: 
+Average latency: 9.00 ms
+Ping packet loss: 0.00% 
+
+From IPERF3 (UDP stream):
+Goodput: 0.10 Mbps
+UDP Jitter: 2.55 ms
+UDP Packet Loss: 7.95%
+SLA compliance: Does NOT comply with your SLA rules 
+
+Your target: latency <= 100 ms, jitter <= 30 ms, loss <= 0.5%, goodput >= 0.128 Mbps
+Your result:  latency=9.00 ms, jitter=2.55 ms, loss=7.95%, goodput=0.10 Mbps
+
+=======  KPI MEASUREMENTS UAV_1 with QoS Template: Y  =======
+packets transmitted = 15
+packets received = 15
+packet loss = 0
+time = 14029ms
+fastest packet = 8.170 ms
+average latency = 9.104 ms
+slowest packet = 10.537 ms
+  ping jitter = 0.654 ms
+Goodput: 0.40 Mbps
+Packets per second: 41.80 pps
+UDP Jitter: 2.6026048921211906 ms
+
+
+
+========= MAVLink KPI RESULTS =========
+
+Total packets: 13905
+Lost packets: 0
+Packet loss: 0.00%
+Total bandwidth: 1.75 kbps
+Average interval: 146.058487 ms
+Overall jitter: 202.422118 ms
+
+
+---- Message Rates (Hz) ----
+MSG 1: 5.72 Hz
+MSG 190: 1.14 Hz
+
+---- Message Jitter (s) ----
+MSG 1: 0.261756 s
+MSG 190: 0.287714 s
+
+ ========= KPI SUMMARY =========
+QoS Template: Y 
+
+From PING: 
+Average latency: 9.10 ms
+Ping packet loss: 0.00% 
+
+From IPERF3 (UDP stream):
+Goodput: 0.40 Mbps
+UDP Jitter: 2.60 ms
+UDP Packet Loss: 54.67%
+SLA compliance: Does NOT comply with your SLA rules 
+
+Your target: latency <= 150 ms, jitter <= 50 ms, loss <= 1.0%, goodput >= 2.0 Mbps
+Your result:  latency=9.10 ms, jitter=2.60 ms, loss=54.67%, goodput=0.40 Mbps
+

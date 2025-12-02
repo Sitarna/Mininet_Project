@@ -9,7 +9,7 @@ hosts:
 gcs: gcs
 templates:
 - template: "Y"
-  duration: 60
+  duration: 15
   folder: True
 repeat: 1
 

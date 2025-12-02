@@ -41,7 +41,7 @@ def ping(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 'data'
     new_lines.append(f"=======  KPI MEASUREMENTS {host_name} with QoS Template: {template}  =======")
 
     # ping gcs with ip 10.0.0.254
-    cmd = ["ping", "-c", str(duration), "10.0.0.254"]
+    cmd = ["ping", "-c", str(duration), "10.0.0.1"]
     result = subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
 
     # Add full ping output to all_output
@@ -120,8 +120,11 @@ def run_iperf3(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 
         bw = "128k"   # 128 kbps
         pkt_len = "100"
     elif template == "Y":
-        bw = "4M"     # 4 Mbps
+        bw = "2M"     # 4 Mbps
         pkt_len = "512"
+        #iface = "UAV_1-eth0"
+        #os.system(f"tc qdisc del dev {iface} root 2> /dev/null")
+        #os.system(f"tc qdisc add dev {iface} root tbf rate 2mbit burst 32kb limit 100mb")
     else:
         bw = "1M"
         pkt_len = "512"
@@ -129,6 +132,7 @@ def run_iperf3(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 
         # Run iperf3 client command
         result = subprocess.run(["iperf3", "-c", "10.0.0.1", "-u", "-b", bw, "-t", str(duration),
         "-i", "1", "-p", "5201", "--len", pkt_len, "-J"], capture_output=True, text=True, check=False)
+        #result = subprocess.run(["iperf3", "-c", "10.0.0.1", "-u", "-b", bw, "-t", str(duration), "-p", "5201", "-J"], capture_output=True, text=True, check=False)
 
         if result.stdout.strip() == "":
             print("iperf3 returned no output!")
@@ -331,6 +335,7 @@ def get_kpi(duration: int = 60, host_name: str = 'UAV_1', folder:bool = True):
         iperf_data = json.load(f)
     packet_loss = iperf_data.get("end", {}).get("sum", {}).get("lost_percent", 0)
 
+    print("DEBUG:", avg_latency, udp_jitter, packet_loss, goodput)
     # SLA evaluation
     if (avg_latency <= SLA_TARGETS["latency_ms"]
         and udp_jitter <= SLA_TARGETS["udp_jitter_ms"]

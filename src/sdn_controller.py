@@ -59,8 +59,8 @@ class LearningSwitch(app_manager.RyuApp):
             
             #Just temporary rates depending on priority
             #change rates later if needed:D
-            rates = {1: 2000, 2: 1000, 3: 500}
-            burst = 100
+            rates = {1: 2000, 2: 2000, 3: 2000}
+            burst = 256000
             
             self.meter_id_map = {1:1, 2:2, 3:3}
             

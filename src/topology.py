@@ -49,30 +49,32 @@ class network_from_truck(Topo):
             bw = 0.128
             delay = '2ms'
             loss = 0
+            #max_queue_size = 1000
         elif template == 'Y':
             bw = 4
             delay = '10ms'
             loss = 1
+            #max_queue_size = 1000
         else:
             raise ValueError("Unknown template. Use 'X' or 'Y'.")
-        # max_queue_size = 1000
+        
         # Links
-        self.addLink(uav_1,    uav_sw_1, cls=TCLink, bw=bw, delay=delay, loss=loss)
-        self.addLink(uav_sw_1, gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss)
+        self.addLink(uav_1,    uav_sw_1, cls=TCLink, bw=bw, delay=delay, loss=loss, max_queue_size = max_queue_size)
+        self.addLink(uav_sw_1, gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss, max_queue_size = max_queue_size)
         
-        self.addLink(uav_2,    uav_sw_2, cls=TCLink, bw=bw, delay=delay, loss=loss)
-        self.addLink(uav_sw_2, gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss)
+        self.addLink(uav_2,    uav_sw_2, cls=TCLink, bw=bw, delay=delay, loss=loss, max_queue_size = max_queue_size)
+        self.addLink(uav_sw_2, gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss, max_queue_size = max_queue_size)
         
-        self.addLink(uav_3,    uav_sw_3, cls=TCLink, bw=bw, delay=delay, loss=loss)
-        self.addLink(uav_sw_3, gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss)
+        self.addLink(uav_3,    uav_sw_3, cls=TCLink, bw=bw, delay=delay, loss=loss, max_queue_size = max_queue_size)
+        self.addLink(uav_sw_3, gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss, max_queue_size = max_queue_size)
         
-        self.addLink(uav_4,    uav_sw_4, cls=TCLink, bw=bw, delay=delay, loss=loss)
-        self.addLink(uav_sw_4, gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss)
+        self.addLink(uav_4,    uav_sw_4, cls=TCLink, bw=bw, delay=delay, loss=loss, max_queue_size = max_queue_size)
+        self.addLink(uav_sw_4, gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss, max_queue_size = max_queue_size)
         
-        self.addLink(uav_5,    uav_sw_5, cls=TCLink, bw=bw, delay=delay, loss=loss)
-        self.addLink(uav_sw_5, gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss)
+        self.addLink(uav_5,    uav_sw_5, cls=TCLink, bw=bw, delay=delay, loss=loss, max_queue_size = max_queue_size)
+        self.addLink(uav_sw_5, gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss, max_queue_size = max_queue_size)
                 
-        self.addLink(gcs,    gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss)
+        self.addLink(gcs,    gcs_sw, cls=TCLink, bw=bw, delay=delay, loss=loss, max_queue_size = max_queue_size)
  
 # connect mininet and Vm 
 def setup_veth(vm_if='veth_vm', mn_if='veth_mn', vm_ip='10.0.0.254/24', mn_node=None):

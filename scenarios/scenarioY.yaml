@@ -1,0 +1,15 @@
+#Future scenario file. jitter queues and other priorities will be here
+scenario_name: "Drone QoS Test Template Y 1"
+hosts:
+- UAV_1
+#- UAV_2
+#- UAV_3
+#- UAV_4
+#- UAV_5
+gcs: gcs
+
+templates:
+- template: "Y"
+  duration: 15
+  folder: True
+repeat: 1

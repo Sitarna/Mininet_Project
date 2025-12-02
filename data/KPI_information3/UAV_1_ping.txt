@@ -152,3 +152,213 @@ average latency = 9.069 ms
 slowest packet = 10.829 ms
   ping jitter = 0.596 ms
 
+----- Raw ping output -----
+PING 10.0.0.254 (10.0.0.254) 56(84) bytes of data.
+64 bytes from 10.0.0.254: icmp_seq=1 ttl=64 time=33.8 ms
+64 bytes from 10.0.0.254: icmp_seq=2 ttl=64 time=8.70 ms
+64 bytes from 10.0.0.254: icmp_seq=3 ttl=64 time=9.75 ms
+64 bytes from 10.0.0.254: icmp_seq=4 ttl=64 time=9.75 ms
+
+--- 10.0.0.254 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3006ms
+rtt min/avg/max/mdev = 8.704/15.508/33.829/10.585 ms
+
+----- Parsed KPI values -----
+packets transmitted = 4
+packets received = 4
+packet loss = 0
+time = 3006ms
+fastest packet = 8.704 ms
+average latency = 15.508 ms
+slowest packet = 33.829 ms
+  ping jitter = 10.585 ms
+
+----- Raw ping output -----
+PING 10.0.0.254 (10.0.0.254) 56(84) bytes of data.
+64 bytes from 10.0.0.254: icmp_seq=1 ttl=64 time=9.70 ms
+64 bytes from 10.0.0.254: icmp_seq=2 ttl=64 time=8.19 ms
+64 bytes from 10.0.0.254: icmp_seq=3 ttl=64 time=9.87 ms
+64 bytes from 10.0.0.254: icmp_seq=4 ttl=64 time=8.83 ms
+
+--- 10.0.0.254 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3007ms
+rtt min/avg/max/mdev = 8.185/9.145/9.866/0.680 ms
+
+----- Parsed KPI values -----
+packets transmitted = 4
+packets received = 4
+packet loss = 0
+time = 3007ms
+fastest packet = 8.185 ms
+average latency = 9.145 ms
+slowest packet = 9.866 ms
+  ping jitter = 0.680 ms
+
+----- Raw ping output -----
+PING 10.0.0.254 (10.0.0.254) 56(84) bytes of data.
+64 bytes from 10.0.0.254: icmp_seq=1 ttl=64 time=8.97 ms
+64 bytes from 10.0.0.254: icmp_seq=2 ttl=64 time=8.81 ms
+64 bytes from 10.0.0.254: icmp_seq=3 ttl=64 time=9.18 ms
+64 bytes from 10.0.0.254: icmp_seq=4 ttl=64 time=8.75 ms
+
+--- 10.0.0.254 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3004ms
+rtt min/avg/max/mdev = 8.746/8.926/9.182/0.167 ms
+
+----- Parsed KPI values -----
+packets transmitted = 4
+packets received = 4
+packet loss = 0
+time = 3004ms
+fastest packet = 8.746 ms
+average latency = 8.926 ms
+slowest packet = 9.182 ms
+  ping jitter = 0.167 ms
+
+----- Raw ping output -----
+PING 10.0.0.254 (10.0.0.254) 56(84) bytes of data.
+64 bytes from 10.0.0.254: icmp_seq=1 ttl=64 time=8.34 ms
+64 bytes from 10.0.0.254: icmp_seq=2 ttl=64 time=9.81 ms
+64 bytes from 10.0.0.254: icmp_seq=3 ttl=64 time=8.68 ms
+64 bytes from 10.0.0.254: icmp_seq=4 ttl=64 time=8.67 ms
+
+--- 10.0.0.254 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3006ms
+rtt min/avg/max/mdev = 8.340/8.876/9.812/0.557 ms
+
+----- Parsed KPI values -----
+packets transmitted = 4
+packets received = 4
+packet loss = 0
+time = 3006ms
+fastest packet = 8.340 ms
+average latency = 8.876 ms
+slowest packet = 9.812 ms
+  ping jitter = 0.557 ms
+
+----- Raw ping output -----
+PING 10.0.0.254 (10.0.0.254) 56(84) bytes of data.
+64 bytes from 10.0.0.254: icmp_seq=1 ttl=64 time=9.31 ms
+64 bytes from 10.0.0.254: icmp_seq=2 ttl=64 time=9.79 ms
+64 bytes from 10.0.0.254: icmp_seq=3 ttl=64 time=9.59 ms
+64 bytes from 10.0.0.254: icmp_seq=4 ttl=64 time=8.12 ms
+
+--- 10.0.0.254 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3005ms
+rtt min/avg/max/mdev = 8.119/9.202/9.789/0.648 ms
+
+----- Parsed KPI values -----
+packets transmitted = 4
+packets received = 4
+packet loss = 0
+time = 3005ms
+fastest packet = 8.119 ms
+average latency = 9.202 ms
+slowest packet = 9.789 ms
+  ping jitter = 0.648 ms
+
+----- Raw ping output -----
+PING 10.0.0.254 (10.0.0.254) 56(84) bytes of data.
+64 bytes from 10.0.0.254: icmp_seq=1 ttl=64 time=8.45 ms
+64 bytes from 10.0.0.254: icmp_seq=2 ttl=64 time=8.12 ms
+64 bytes from 10.0.0.254: icmp_seq=3 ttl=64 time=9.08 ms
+64 bytes from 10.0.0.254: icmp_seq=4 ttl=64 time=8.74 ms
+
+--- 10.0.0.254 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3004ms
+rtt min/avg/max/mdev = 8.118/8.596/9.081/0.355 ms
+
+----- Parsed KPI values -----
+packets transmitted = 4
+packets received = 4
+packet loss = 0
+time = 3004ms
+fastest packet = 8.118 ms
+average latency = 8.596 ms
+slowest packet = 9.081 ms
+  ping jitter = 0.355 ms
+
+----- Raw ping output -----
+PING 10.0.0.254 (10.0.0.254) 56(84) bytes of data.
+64 bytes from 10.0.0.254: icmp_seq=1 ttl=64 time=9.25 ms
+64 bytes from 10.0.0.254: icmp_seq=2 ttl=64 time=8.74 ms
+64 bytes from 10.0.0.254: icmp_seq=3 ttl=64 time=8.74 ms
+64 bytes from 10.0.0.254: icmp_seq=4 ttl=64 time=8.09 ms
+
+--- 10.0.0.254 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3005ms
+rtt min/avg/max/mdev = 8.092/8.705/9.252/0.411 ms
+
+----- Parsed KPI values -----
+packets transmitted = 4
+packets received = 4
+packet loss = 0
+time = 3005ms
+fastest packet = 8.092 ms
+average latency = 8.705 ms
+slowest packet = 9.252 ms
+  ping jitter = 0.411 ms
+
+----- Raw ping output -----
+PING 10.0.0.254 (10.0.0.254) 56(84) bytes of data.
+64 bytes from 10.0.0.254: icmp_seq=1 ttl=64 time=9.68 ms
+64 bytes from 10.0.0.254: icmp_seq=2 ttl=64 time=8.75 ms
+64 bytes from 10.0.0.254: icmp_seq=3 ttl=64 time=8.77 ms
+64 bytes from 10.0.0.254: icmp_seq=4 ttl=64 time=8.94 ms
+
+--- 10.0.0.254 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3007ms
+rtt min/avg/max/mdev = 8.748/9.033/9.676/0.378 ms
+
+----- Parsed KPI values -----
+packets transmitted = 4
+packets received = 4
+packet loss = 0
+time = 3007ms
+fastest packet = 8.748 ms
+average latency = 9.033 ms
+slowest packet = 9.676 ms
+  ping jitter = 0.378 ms
+
+----- Raw ping output -----
+PING 10.0.0.254 (10.0.0.254) 56(84) bytes of data.
+64 bytes from 10.0.0.254: icmp_seq=1 ttl=64 time=9.18 ms
+64 bytes from 10.0.0.254: icmp_seq=2 ttl=64 time=8.79 ms
+64 bytes from 10.0.0.254: icmp_seq=3 ttl=64 time=8.28 ms
+64 bytes from 10.0.0.254: icmp_seq=4 ttl=64 time=8.80 ms
+
+--- 10.0.0.254 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3003ms
+rtt min/avg/max/mdev = 8.277/8.761/9.179/0.320 ms
+
+----- Parsed KPI values -----
+packets transmitted = 4
+packets received = 4
+packet loss = 0
+time = 3003ms
+fastest packet = 8.277 ms
+average latency = 8.761 ms
+slowest packet = 9.179 ms
+  ping jitter = 0.320 ms
+
+----- Raw ping output -----
+PING 10.0.0.254 (10.0.0.254) 56(84) bytes of data.
+64 bytes from 10.0.0.254: icmp_seq=1 ttl=64 time=9.13 ms
+64 bytes from 10.0.0.254: icmp_seq=2 ttl=64 time=8.35 ms
+64 bytes from 10.0.0.254: icmp_seq=3 ttl=64 time=9.73 ms
+64 bytes from 10.0.0.254: icmp_seq=4 ttl=64 time=9.87 ms
+
+--- 10.0.0.254 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3005ms
+rtt min/avg/max/mdev = 8.352/9.270/9.868/0.597 ms
+
+----- Parsed KPI values -----
+packets transmitted = 4
+packets received = 4
+packet loss = 0
+time = 3005ms
+fastest packet = 8.352 ms
+average latency = 9.270 ms
+slowest packet = 9.868 ms
+  ping jitter = 0.597 ms
+

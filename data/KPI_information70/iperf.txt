@@ -1,0 +1,22 @@
+{
+    "start": {
+        "connected": [],
+        "version": "iperf 3.7",
+        "system_info": "Linux mininet-vm 5.4.0-42-generic #46-Ubuntu SMP Fri Jul 10 00:24:02 UTC 2020 x86_64",
+        "timestamp": {
+            "time": "Tue, 02 Dec 2025 09:25:36 GMT",
+            "timesecs": 1764667536
+        },
+        "connecting_to": {
+            "host": "10.0.0.1",
+            "port": 5201
+        },
+        "cookie": "qjwnpcqllil2erkkyyymjbslmpo4x3uzzoi7",
+        "sock_bufsize": 0,
+        "sndbuf_actual": 212992,
+        "rcvbuf_actual": 212992
+    },
+    "intervals": [],
+    "end": {},
+    "error": "error - unable to read from stream socket: Resource temporarily unavailable"
+}

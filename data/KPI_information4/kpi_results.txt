@@ -1,0 +1,9 @@
+=======  KPI MEASUREMENTS UAV_1 with QoS Template: X  =======
+packets transmitted = 60
+packets received = 60
+packet loss = 0
+time = 59068ms
+fastest packet = 8.106 ms
+average latency = 9.062 ms
+slowest packet = 12.048 ms
+  ping jitter = 0.728 ms

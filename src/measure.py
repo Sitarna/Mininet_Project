@@ -120,11 +120,8 @@ def run_iperf3(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 
         bw = "128k"   # 128 kbps
         pkt_len = "100"
     elif template == "Y":
-        bw = "2M"     # 4 Mbps
+        bw = "2M"     # 2 Mbps
         pkt_len = "512"
-        #iface = "UAV_1-eth0"
-        #os.system(f"tc qdisc del dev {iface} root 2> /dev/null")
-        #os.system(f"tc qdisc add dev {iface} root tbf rate 2mbit burst 32kb limit 100mb")
     else:
         bw = "1M"
         pkt_len = "512"
@@ -132,7 +129,6 @@ def run_iperf3(duration: int = 60, host_name: str = 'UAV_1', folder_path: str = 
         # Run iperf3 client command
         result = subprocess.run(["iperf3", "-c", "10.0.0.1", "-u", "-b", bw, "-t", str(duration),
         "-i", "1", "-p", "5201", "--len", pkt_len, "-J"], capture_output=True, text=True, check=False)
-        #result = subprocess.run(["iperf3", "-c", "10.0.0.1", "-u", "-b", bw, "-t", str(duration), "-p", "5201", "-J"], capture_output=True, text=True, check=False)
 
         if result.stdout.strip() == "":
             print("iperf3 returned no output!")

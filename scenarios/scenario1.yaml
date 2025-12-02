@@ -10,9 +10,6 @@ gcs: gcs
 
 templates:
 - template: "X"
-  duration: 15
+  duration: 60
   folder: True
-- template: "Y"
-  duration: 15
-  folder: False
 repeat: 1

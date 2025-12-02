@@ -11,5 +11,5 @@ gcs: gcs
 templates:
 - template: "X"
   duration: 60
-  folder: True
-repeat: 1
+  folder: False
+repeat: 10

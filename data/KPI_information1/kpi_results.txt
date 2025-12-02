@@ -2,97 +2,97 @@
 packets transmitted = 60
 packets received = 60
 packet loss = 0
-time = 59072ms
-fastest packet = 8.067 ms
-average latency = 8.255 ms
-slowest packet = 10.318 ms
-  ping jitter = 0.311 ms
-Goodput: 0.11 Mbps
-Packets per second: 142.15 pps
-UDP Jitter: 3.6747117035137933 ms
+time = 59003ms
+fastest packet = 12.531 ms
+average latency = 14.956 ms
+slowest packet = 23.155 ms
+  ping jitter = 1.861 ms
+Goodput: 0.13 Mbps
+Packets per second: 159.90 pps
+UDP Jitter: 1.7558733513340146 ms
 
 
 
 ========= MAVLink KPI RESULTS =========
 
-Total packets: 13905
+Total packets: 9554
 Lost packets: 0
 Packet loss: 0.00%
-Total bandwidth: 1.75 kbps
-Average interval: 146.058487 ms
-Overall jitter: 202.422118 ms
+Total bandwidth: 14.51 kbps
+Average interval: 29.484620 ms
+Overall jitter: 54.591514 ms
 
 
 ---- Message Rates (Hz) ----
-MSG 1: 5.72 Hz
-MSG 190: 1.14 Hz
+MSG 1: 32.15 Hz
+MSG 190: 1.85 Hz
 
 ---- Message Jitter (s) ----
-MSG 1: 0.261756 s
-MSG 190: 0.287714 s
+MSG 1: 0.058424 s
+MSG 190: 0.404996 s
 
  ========= KPI SUMMARY =========
 QoS Template: X 
 
 From PING: 
-Average latency: 8.26 ms
+Average latency: 14.96 ms
 Ping packet loss: 0.00% 
 
 From IPERF3 (UDP stream):
-Goodput: 0.11 Mbps
-UDP Jitter: 3.67 ms
-UDP Packet Loss: 17.66%
-SLA compliance: Does NOT comply with your SLA rules 
+Goodput: 0.13 Mbps
+UDP Jitter: 1.76 ms
+UDP Packet Loss: 0.00%
+SLA compliance: Does comply with your SLA rules 
 
-Your target: latency <= 100 ms, jitter <= 30 ms, loss <= 0.5%, goodput >= 0.128 Mbps
-Your result:  latency=8.26 ms, jitter=3.67 ms, loss=17.66%, goodput=0.11 Mbps
+Your target: latency <= 100 ms, jitter <= 30 ms, loss <= 0.5%, goodput >= 0.12 Mbps
+Your result:  latency=14.96 ms, jitter=1.76 ms, loss=0.00%, goodput=0.13 Mbps
 
 =======  KPI MEASUREMENTS UAV_1 with QoS Template: Y  =======
 packets transmitted = 60
 packets received = 60
 packet loss = 0
-time = 59073ms
-fastest packet = 8.089 ms
-average latency = 8.204 ms
-slowest packet = 8.787 ms
-  ping jitter = 0.150 ms
-Goodput: 2.54 Mbps
-Packets per second: 618.99 pps
-UDP Jitter: 1.5501615337094985 ms
+time = 59007ms
+fastest packet = 60.765 ms
+average latency = 62.017 ms
+slowest packet = 64.735 ms
+  ping jitter = 1.043 ms
+Goodput: 2.00 Mbps
+Packets per second: 487.78 pps
+UDP Jitter: 0.9602306162009474 ms
 
 
 
 ========= MAVLink KPI RESULTS =========
 
-Total packets: 13905
+Total packets: 8832
 Lost packets: 0
 Packet loss: 0.00%
-Total bandwidth: 1.75 kbps
-Average interval: 146.058487 ms
-Overall jitter: 202.422118 ms
+Total bandwidth: 14.22 kbps
+Average interval: 31.023847 ms
+Overall jitter: 51.828965 ms
 
 
 ---- Message Rates (Hz) ----
-MSG 1: 5.72 Hz
-MSG 190: 1.14 Hz
+MSG 1: 30.64 Hz
+MSG 190: 1.60 Hz
 
 ---- Message Jitter (s) ----
-MSG 1: 0.261756 s
-MSG 190: 0.287714 s
+MSG 1: 0.055297 s
+MSG 190: 0.338050 s
 
  ========= KPI SUMMARY =========
 QoS Template: Y 
 
 From PING: 
-Average latency: 8.20 ms
+Average latency: 62.02 ms
 Ping packet loss: 0.00% 
 
 From IPERF3 (UDP stream):
-Goodput: 2.54 Mbps
-UDP Jitter: 1.55 ms
-UDP Packet Loss: 95.31%
+Goodput: 2.00 Mbps
+UDP Jitter: 0.96 ms
+UDP Packet Loss: 5.67%
 SLA compliance: Does NOT comply with your SLA rules 
 
 Your target: latency <= 150 ms, jitter <= 50 ms, loss <= 1.0%, goodput >= 2.0 Mbps
-Your result:  latency=8.20 ms, jitter=1.55 ms, loss=95.31%, goodput=2.54 Mbps
+Your result:  latency=62.02 ms, jitter=0.96 ms, loss=5.67%, goodput=2.00 Mbps
 

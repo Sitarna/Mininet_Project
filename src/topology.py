@@ -46,15 +46,15 @@ class network_from_truck(Topo):
 # bandwidth is 4 Mbps, 10 milliseconds latency, 1% packet loss
 
         if template == 'X':
-            bw = 0.128
+            bw = 0.256
             delay = '2ms'
             loss = 0
-            #max_queue_size = 1000
+            max_queue_size = 1000
         elif template == 'Y':
             bw = 4
             delay = '10ms'
             loss = 1
-            #max_queue_size = 1000
+            max_queue_size = 1000
         else:
             raise ValueError("Unknown template. Use 'X' or 'Y'.")
         

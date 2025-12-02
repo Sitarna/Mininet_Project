@@ -53,7 +53,7 @@ class network_from_truck(Topo):
         elif template == 'Y':
             bw = 4
             delay = '10ms'
-            loss = 1
+            loss = 0
             max_queue_size = 1000
         else:
             raise ValueError("Unknown template. Use 'X' or 'Y'.")

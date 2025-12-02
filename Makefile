@@ -31,7 +31,7 @@ run: controller
 
 runY: controller 
 	sleep 10
-	$(MAKE)topology_Y
+	$(MAKE) topology_Y
 
 rerun: kill run
 
@@ -40,6 +40,3 @@ rerunY: kill runY
 kill:
 	killall xterm
 	sudo mn -c
-
-
-
